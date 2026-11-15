@@ -19,7 +19,7 @@ bytemuck = { version = "1.25", features = ["derive"] }
 glam = { version = "0.33", features = ["bytemuck"] }
 rfd = "0.17"
 env_logger = "0.11"
-acadrust = { git = "https://github.com/HakanSeven12/cadcodec.git", rev = "88fdb556dc8a292931a52b52ba42fc322dd39c23", features = ["serde"] }
+acadrust = { git = "https://github.com/hakanaktt/acadrust.git", rev = "88fdb556dc8a292931a52b52ba42fc322dd39c23", features = ["serde"] }
 cadkernel = { git = "https://github.com/HakanSeven12/cadkernel.git", rev = "a3185be8189d78d6e93b4ea5b9238b184da4f3cf", features = ["acis", "offset"] }
 cadkernel-constraints = { git = "https://github.com/HakanSeven12/cadkernel.git", rev = "a3185be8189d78d6e93b4ea5b9238b184da4f3cf" }
 flate2 = "1"
