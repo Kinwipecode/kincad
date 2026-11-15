@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Zapojit se do diskuse</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Pracovní plocha Open CAD Studio" width="100%"></p>
-
 ## Přehled
 
 Open CAD Studio je multiplatformní aplikace pro technické kreslení, práci s rozvržením a modelování těles. Nativně čte a zapisuje výkresy DWG a DXF; desktopová a prohlížečová verze používají společné editační jádro.

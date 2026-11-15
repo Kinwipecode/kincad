@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Participer aux discussions</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Espace de travail Open CAD Studio" width="100%"></p>
-
 ## Présentation
 
 Open CAD Studio est une application multiplateforme destinée au dessin technique, à la mise en page et à la modélisation de solides. Elle lit et écrit nativement les dessins DWG et DXF, avec un même cœur d’édition pour les versions bureau et navigateur.

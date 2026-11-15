@@ -74,10 +74,6 @@ The project as a whole is distributed under GPL-3.0; see [LICENSE](LICENSE).
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Join the discussion</strong></a>
 </p>
 
-<p align="center">
-  <img src="site/workspace.png" alt="Open CAD Studio workspace" width="100%">
-</p>
-
 ## Overview
 
 Open CAD Studio is a cross-platform application for technical drawing, layout work, and solid modeling. It reads and writes DWG and DXF drawings natively, with a shared editing core across the desktop and browser versions.

@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>參與討論</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studio 工作區" width="100%"></p>
-
 ## 概覽
 
 Open CAD Studio 是用於技術繪圖、配置作業和實體建模的跨平台應用程式。它能原生讀取與寫入 DWG 和 DXF 圖面，桌面版與瀏覽器版共用相同的編輯核心。

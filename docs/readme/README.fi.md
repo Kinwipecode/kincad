@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Osallistu keskusteluun</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studion työtila" width="100%"></p>
-
 ## Yleiskatsaus
 
 Open CAD Studio on monialustainen sovellus tekniseen piirtämiseen, asettelutyöhön ja solidimallinnukseen. Se lukee ja kirjoittaa DWG- ja DXF-piirustuksia suoraan, ja työpöytä- sekä selainversiot käyttävät samaa muokkausydintä.

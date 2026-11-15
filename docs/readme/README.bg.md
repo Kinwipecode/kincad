@@ -21,8 +21,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Присъединете се към дискусията</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Работно пространство на Open CAD Studio" width="100%"></p>
-
 ## Общ преглед
 
 Open CAD Studio е междуплатформено приложение за техническо чертане, работа с оформления и моделиране на твърди тела. То чете и записва DWG и DXF чертежи директно, като настолната и браузърната версия използват общо ядро за редактиране.

@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>चर्चा में शामिल हों</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studio कार्यक्षेत्र" width="100%"></p>
-
 ## परिचय
 
 Open CAD Studio तकनीकी ड्राइंग, लेआउट कार्य और सॉलिड मॉडलिंग के लिए एक क्रॉस-प्लेटफ़ॉर्म अनुप्रयोग है। यह DWG और DXF ड्राइंग को मूल रूप से पढ़ता और लिखता है, तथा डेस्कटॉप और ब्राउज़र संस्करण समान संपादन कोर साझा करते हैं।

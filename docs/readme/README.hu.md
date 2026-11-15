@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Csatlakozás a beszélgetéshez</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studio munkaterület" width="100%"></p>
-
 ## Áttekintés
 
 Az Open CAD Studio többplatformos alkalmazás műszaki rajzoláshoz, elrendezések készítéséhez és testmodellezéshez. Natívan olvas és ír DWG- és DXF-rajzokat; az asztali és böngészős változat közös szerkesztőmagot használ.

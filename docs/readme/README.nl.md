@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Deelnemen aan discussies</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Werkruimte van Open CAD Studio" width="100%"></p>
-
 ## Overzicht
 
 Open CAD Studio is een platformonafhankelijke toepassing voor technisch tekenen, lay-outwerk en solid modeling. DWG- en DXF-tekeningen worden rechtstreeks gelezen en geschreven; de desktop- en browserversie delen dezelfde bewerkingskern.

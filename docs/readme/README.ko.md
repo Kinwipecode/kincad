@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>토론 참여</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studio 작업 공간" width="100%"></p>
-
 ## 개요
 
 Open CAD Studio는 기술 도면 작성, 배치 작업, 솔리드 모델링을 위한 크로스 플랫폼 애플리케이션입니다. DWG 및 DXF 도면을 기본 형식으로 읽고 쓰며 데스크톱 버전과 브라우저 버전이 같은 편집 코어를 공유합니다.

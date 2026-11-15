@@ -12,8 +12,8 @@ from `assets/logo.svg`, without details that disappear at small sizes. Export
 `favicon.svg` to PNG at 96, 180, 192 and 512 pixels and ICO at 16, 32, 48, 96 and
 256 pixels when it changes. Favicon URLs stay fixed for search engine crawlers.
 
-`workspace.png` and `modeling.png` are shared by the website and all README languages.
-The drawing screenshot also supplies the social preview; website image URLs change with their contents.
+`modeling.png` is shared by the website and all README languages. It also supplies
+the social preview; website image URLs change with their contents.
 
 GitHub Pages runs on release publication, a call from the weekly release workflow,
 or a manual run. Commits and pushes do not start workflows. Deployments use website

@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>الانضمام إلى النقاش</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="مساحة عمل Open CAD Studio" width="100%"></p>
-
 ## نظرة عامة
 
 Open CAD Studio تطبيق متعدد المنصات للرسم التقني والعمل على التخطيطات ونمذجة المجسمات. يقرأ رسومات DWG وDXF ويكتبها مباشرة، ويشترك إصدار سطح المكتب وإصدار المتصفح في نواة التحرير نفسها.

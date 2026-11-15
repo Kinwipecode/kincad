@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Dołącz do dyskusji</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Obszar roboczy Open CAD Studio" width="100%"></p>
-
 ## Przegląd
 
 Open CAD Studio to wieloplatformowa aplikacja do rysunku technicznego, pracy z układami i modelowania brył. Natywnie odczytuje i zapisuje rysunki DWG i DXF, a wersje komputerowa i przeglądarkowa korzystają ze wspólnego rdzenia edycji.

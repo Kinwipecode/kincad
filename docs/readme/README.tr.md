@@ -21,8 +21,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>Tartışmalara katıl</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studio çalışma alanı" width="100%"></p>
-
 ## Genel bakış
 
 Open CAD Studio; teknik çizim, pafta düzenleme ve katı modelleme için platformlar arası bir uygulamadır. DWG ve DXF çizimlerini doğrudan okur ve yazar; masaüstü ile tarayıcı sürümleri aynı düzenleme çekirdeğini paylaşır.

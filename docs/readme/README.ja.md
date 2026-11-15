@@ -19,8 +19,6 @@
   <a href="https://github.com/HakanSeven12/OpenCADStudio/discussions"><strong>ディスカッションに参加</strong></a>
 </p>
 
-<p align="center"><img src="../../site/workspace.png" alt="Open CAD Studio ワークスペース" width="100%"></p>
-
 ## 概要
 
 Open CAD Studio は、技術製図、レイアウト作業、ソリッドモデリングのためのクロスプラットフォームアプリケーションです。DWG および DXF 図面をネイティブに読み書きし、デスクトップ版とブラウザ版で共通の編集コアを使用します。
