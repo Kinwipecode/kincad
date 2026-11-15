@@ -1,26 +1,28 @@
 #![allow(non_snake_case)]
 #![recursion_limit = "256"]
 
-pub mod app;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod cli;
+pub mod area_layout;
+pub mod batch;
+pub mod cleanup;
+pub mod purge;
 pub mod command;
 pub mod config;
-pub mod discussions;
+pub mod darstellung;
 pub mod entities;
 pub mod i18n;
 pub mod io;
 #[cfg(not(target_arch = "wasm32"))]
-pub mod mcp;
-pub mod modules;
-#[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod network;
 pub mod par;
-pub mod patreon;
 pub mod perf;
-pub mod plugin;
+pub mod layout_fuse;
+pub mod layout_export;
+
+pub mod scale;
 pub mod scene;
-pub mod snap;
 pub mod sys;
-pub mod ui;
-pub mod videos;
+pub mod viewer;
+/// Externe Referenzen anhängen (XATTACH) — GUI-frei, siehe `viewer/xref_attach.rs`.
+pub mod xref_attach;
+/// Bild oder PDF als Unterlage anhängen — siehe `picture_attach.rs`.
+pub mod picture_attach;

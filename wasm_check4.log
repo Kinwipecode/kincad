@@ -1,0 +1,150 @@
+   Compiling KINCAD v2026.36.0 (G:\Dwg_Viewer_5_on\viewer)
+vendor\cadkernel\src\brep\mod.rs:97:16: warning: unused import: `sweep_path::reversed_path_curves`
+vendor\cadkernel\src\geom2d\triangulate.rs:1116:4: warning: function `ear_score` is never used
+vendor\cadkernel\src\geom2d\triangulate.rs:1128:4: warning: function `ear_corners` is never used
+vendor\cadkernel\src\geom2d\triangulate.rs:1142:4: warning: function `is_ear` is never used
+vendor\cadkernel\src\brep\sweep_path.rs:2312:15: warning: function `reversed_path_curves` is never used
+warning: `cadkernel` (lib) generated 5 warnings (run `cargo fix --lib -p cadkernel` to apply 1 suggestion)
+src\scene\flaechen.rs:1303:13: warning: unused import: `acadrust::entities::hatch::BoundaryPathFlags`
+src\scene\flaechen.rs:1304:34: warning: unused imports: `BoundaryEdge`, `BoundaryPath`, and `PolylineEdge`
+src\scene\flaechen.rs:1305:13: warning: unused import: `acadrust::types::Vector2`
+src\scene\dwg_probe.rs:20:5: warning: unused import: `crate::scene::render_graph`
+src\scene\dwg_probe.rs:22:34: warning: unused import: `HashSet`
+src\scene\dwg_probe.rs:23:5: warning: unused import: `std::path::PathBuf`
+src\scene\mod.rs:66:24: warning: unused imports: `boundary_entities_from_sources`, `boundary_polyline_entities`, `hatch_boundary_rings`, and `separated_hatch_path_groups`
+src\viewer\ribbon.rs:968:5: warning: unused doc comment
+src\scene\dwg_probe.rs:1405:9: warning: unused import: `acadrust::Entity`
+src\scene\pick\xclip.rs:198:9: warning: unused import: `acadrust::Entity`
+src\scene\pipeline\offscreen_probe.rs:126:9: warning: variable does not need to be mutable
+src\scene\pipeline\offscreen_probe.rs:126:9: warning: unused variable: `camera`: help: if this is intentional, prefix it with an underscore: `_camera`
+src\viewer\measure.rs:1966:9: warning: variable does not need to be mutable
+src\viewer\mod.rs:12652:13: warning: unused variable: `gray`: help: if this is intentional, prefix it with an underscore: `_gray`
+src\viewer\mod.rs:13779:60: warning: value assigned to `header_row` is never read: this value is reassigned later and never used
+src\viewer\mod.rs:1281:18: warning: type `LayerFilterKind` is more private than the item `Message::LayerKindSet::0`: field `Message::LayerKindSet::0` is reachable at visibility `pub`
+src\viewer\mod.rs:1338:19: warning: type `CleanupIo` is more private than the item `Message::CleanupIoDone::0`: field `Message::CleanupIoDone::0` is reachable at visibility `pub`
+src\viewer\mod.rs:1503:22: warning: type `BlockAxis` is more private than the item `Message::BlockBaseChanged::0`: field `Message::BlockBaseChanged::0` is reachable at visibility `pub`
+src\entities\dimension.rs:3159:15: warning: function `materialize_large_radial_text_position` is never used
+src\entities\dimension.rs:7279:15: warning: function `dimension_text_grip_position` is never used
+src\entities\helix.rs:101:15: warning: function `reversed` is never used
+src\entities\lwpolyline.rs:19:7: warning: constant `REVCLOUD_BULGE` is never used
+src\entities\lwpolyline.rs:107:4: warning: function `split_bulges_from_point` is never used
+src\entities\lwpolyline.rs:151:15: warning: function `refit_added_arc_vertex` is never used
+src\entities\lwpolyline.rs:594:15: warning: function `break_at_vertex` is never used
+src\entities\lwpolyline.rs:827:15: warning: function `revision_cloud_from_curve` is never used
+src\entities\mesh.rs:997:15: warning: function `closed_mesh_body` is never used
+src\entities\spline.rs:500:15: warning: function `control_vertex_count` is never used
+src\entities\tolerance.rs:445:15: warning: function `preview_strokes` is never used
+src\io\mod.rs:92:4: warning: function `recovery_fingerprint_needed` is never used
+src\io\mod.rs:976:4: warning: function `merge_read_diagnostics` is never used
+src\io\mod.rs:988:4: warning: function `merge_read_stats` is never used
+src\io\print_to_printer.rs:33:15: warning: function `temp_pdf_path` is never used
+src\scene\mod.rs:1576:5: warning: variants `Pan`, `Zoom`, `Rotate`, and `Edit` are never constructed
+src\scene\mod.rs:2840:19: warning: multiple methods are never used
+src\scene\convert\acis_outline.rs:13:7: warning: constant `PCURVE_SAMPLES` is never used
+src\scene\convert\acis_outline.rs:47:4: warning: function `wraps` is never used
+src\scene\creation_style.rs:261:15: warning: function `parse_current_transparency` is never used
+src\scene\creation_style.rs:271:15: warning: function `current_transparency_label` is never used
+src\scene\frame.rs:13:18: warning: constant `ALL_KINDS` is never used
+src\scene\frame.rs:84:15: warning: function `master_mode` is never used
+src\scene\frame.rs:94:4: warning: function `attach_root_entry` is never used
+src\scene\frame.rs:104:4: warning: function `set_image_mode` is never used
+src\scene\frame.rs:123:4: warning: function `set_wipeout_mode` is never used
+src\scene\frame.rs:143:15: warning: function `set_mode` is never used
+src\scene\frame.rs:158:15: warning: function `set_master_mode` is never used
+src\scene\frame.rs:167:15: warning: function `kind_for_name` is never used
+src\scene\frame.rs:191:15: warning: function `affected` is never used
+src\scene\pipeline\mod.rs:5791:4: warning: function `gpu_status_from` is never used
+src\scene\pipeline\mod.rs:5801:15: warning: function `gpu_status` is never used
+src\scene\pipeline\mod.rs:5808:15: warning: function `gpu_status_if_changed` is never used
+src\scene\pipeline\offscreen_probe.rs:20:12: warning: struct `ProbeReport` is never constructed
+src\scene\pipeline\offscreen_probe.rs:27:12: warning: struct `MeshSummary` is never constructed
+src\scene\pipeline\offscreen_probe.rs:37:8: warning: function `render_file` is never used
+src\scene\pipeline\offscreen_probe.rs:199:4: warning: function `read_back` is never used
+src\scene\pipeline\offscreen_probe.rs:259:12: warning: struct `ProbeDevice` is never constructed
+src\scene\pipeline\offscreen_probe.rs:265:8: warning: function `request_probe_device` is never used
+src\scene\render_graph.rs:1012:8: warning: function `document_block_uses` is never used
+src\scene\boundary.rs:545:4: warning: function `normalized_delta` is never used
+src\scene\boundary.rs:551:4: warning: function `curve_edge_bulge` is never used
+src\scene\boundary.rs:568:4: warning: function `boundary_polyline` is never used
+src\scene\boundary.rs:600:15: warning: function `boundary_polyline_entities` is never used
+src\scene\boundary.rs:618:15: warning: function `boundary_entities_from_sources` is never used
+src\scene\boundary.rs:631:19: warning: methods `replace_hatch_association` and `edit_hatch_boundary_handles` are never used
+src\scene\boundary.rs:967:15: warning: function `hatch_boundary_rings` is never used
+src\scene\boundary.rs:971:15: warning: function `separated_hatch_path_groups` is never used
+src\scene\centerline.rs:11:7: warning: constant `SETTINGS_RECORD` is never used
+src\scene\centerline.rs:14:19: warning: struct `CenterLineSettings` is never constructed
+src\scene\centerline.rs:186:4: warning: function `rebuild_line` is never used
+src\scene\centerline.rs:226:8: warning: methods `centerline_settings_owner`, `centerline_settings`, `set_centerline_setting`, `reset_centerlines`, and `set_centerline_association` are never used
+src\scene\centerline.rs:423:15: warning: function `resolve_center_measure` is never used
+src\scene\centerline.rs:434:15: warning: function `center_measure_is_relative` is never used
+src\scene\dimension_assoc.rs:23:15: warning: function `polyline_arc_point_marker` is never used
+src\scene\dimension_assoc.rs:60:19: warning: methods `chord_at`, `opposite_chord_at`, `curve`, and `distance_squared_to` are never used
+src\scene\dimension_assoc.rs:157:15: warning: function `radial_source_at` is never used
+src\scene\dimension_assoc.rs:174:4: warning: function `radial_source_matching` is never used
+src\scene\dimension_assoc.rs:306:4: warning: function `source_reference` is never used
+src\scene\dimension_assoc.rs:337:4: warning: function `source_marker` is never used
+src\scene\dimension_assoc.rs:417:4: warning: function `dimension_inference_points` is never used
+src\scene\dimension_assoc.rs:437:4: warning: function `source_distance_squared` is never used
+src\scene\dimension_assoc.rs:453:4: warning: function `dimension_reference_points` is never used
+src\scene\dimension_assoc.rs:545:15: warning: function `dimension_is_associative` is never used
+src\scene\dimension_assoc.rs:641:19: warning: methods `attach_dimension_association`, `attach_dimension_association_sources`, `store_dimension_association`, and `infer_dimension_sources` are never used
+src\scene\centermark.rs:33:4: warning: function `arc_distance` is never used
+src\scene\centermark.rs:60:15: warning: function `picked_mark_source` is never used
+src\scene\centermark.rs:328:19: warning: methods `reassociate_center_mark`, `reset_center_marks`, and `set_center_mark_association` are never used
+src\scene\dwg_native_constraints.rs:19:7: warning: constant `NETWORK_DICTIONARY_KEY` is never used
+src\scene\dwg_native_constraints.rs:23:7: warning: constant `FIRST_NODE_ID` is never used
+src\scene\dwg_native_constraints.rs:39:8: warning: struct `EntityNodes` is never constructed
+src\scene\dwg_native_constraints.rs:46:8: warning: struct `GroupBuilder` is never constructed
+src\scene\dwg_native_constraints.rs:57:8: warning: multiple associated items are never used
+src\scene\dwg_native_constraints.rs:246:4: warning: function `geometrical_class_name` is never used
+src\scene\dwg_native_constraints.rs:294:10: warning: function `dimensional_class_name` is never used
+src\scene\dwg_native_constraints.rs:314:4: warning: function `constraint_node` is never used
+src\scene\dwg_native_constraints.rs:477:8: warning: struct `Allocator` is never constructed
+src\scene\dwg_native_constraints.rs:487:8: warning: methods `insert_associative`, `insert_associative_at`, `geom_dependency`, `variable`, and `value_dependency` are never used
+src\scene\dwg_native_constraints.rs:609:4: warning: function `set_geometry_dependency` is never used
+src\scene\dwg_native_constraints.rs:632:4: warning: function `set_value_dependency` is never used
+src\scene\dwg_native_constraints.rs:664:7: warning: constant `ASSOC_CLASSES` is never used
+src\scene\dwg_native_constraints.rs:672:4: warning: function `ensure_associative_classes_registered` is never used
+src\scene\dwg_native_constraints.rs:706:4: warning: function `ensure_extension_dictionary` is never used
+src\scene\dwg_native_constraints.rs:723:4: warning: function `remove_dictionary_entry` is never used
+src\scene\dwg_native_constraints.rs:739:4: warning: function `set_dictionary_entry` is never used
+src\scene\dwg_native_constraints.rs:762:4: warning: function `remove_owned_recursive` is never used
+src\scene\dwg_native_constraints.rs:786:4: warning: function `has_native_network` is never used
+src\scene\dwg_native_constraints.rs:799:4: warning: function `materialize_scope` is never used
+src\scene\dwg_native_constraints.rs:951:19: warning: method `materialize_dwg_native_constraints_for_save` is never used
+src\scene\dwg_native_constraints.rs:27:15: warning: constant `START` is never used
+src\scene\dwg_native_constraints.rs:28:15: warning: constant `END` is never used
+src\scene\dwg_native_constraints.rs:31:15: warning: constant `CENTER` is never used
+src\scene\layout.rs:19:19: warning: method `model_pane_min_reporter` is never used
+src\scene\named_parameters_persist.rs:13:7: warning: constant `MAX_CHUNK_BYTES` is never used
+src\scene\named_parameters_persist.rs:22:4: warning: function `encode` is never used
+src\scene\named_parameters_persist.rs:56:19: warning: method `materialize_named_parameters_for_save` is never used
+src\scene\preview.rs:444:19: warning: method `block_preview_wires` is never used
+src\scene\selection.rs:959:19: warning: method `rollback_new_entities` is never used
+src\scene\sketch_constraints.rs:285:15: warning: function `resolve_point` is never used
+src\scene\sketch_constraints.rs:304:7: warning: constant `COINCIDENT_EPSILON_SQ` is never used
+src\scene\sketch_constraints.rs:309:15: warning: function `nearest_sketch_point` is never used
+src\scene\sketch_constraints.rs:353:15: warning: function `infer_coincident_refs` is never used
+src\scene\sketch_constraints.rs:427:15: warning: function `glyph_label` is never used
+src\scene\sketch_constraints.rs:455:15: warning: function `glyph_anchor` is never used
+src\scene\sketch_persist.rs:23:7: warning: constant `MAX_CHUNK_BYTES` is never used
+src\scene\sketch_persist.rs:31:4: warning: function `remove_xrecord` is never used
+src\scene\sketch_persist.rs:55:4: warning: function `encode` is never used
+src\scene\sketch_persist.rs:95:19: warning: method `materialize_sketch_constraints_for_save` is never used
+src\scene\sketch_solve.rs:1074:19: warning: methods `validate_sketch_constraint` and `solve_sketch_constraints_preview` are never used
+src\viewer\mod.rs:13758:12: warning: function `fill_cell` is never used
+src\viewer\mod.rs:17793:7: warning: constant `PRINT_BG` is never used
+src\viewer\mod.rs:17794:7: warning: constant `PRINT_TEXT` is never used
+src\viewer\mod.rs:17795:7: warning: constant `PRINT_SUB` is never used
+src\viewer\mod.rs:17796:7: warning: constant `PRINT_ACCENT` is never used
+src\viewer\mod.rs:17797:7: warning: constant `PRINT_LINE` is never used
+src\viewer\mod.rs:17798:7: warning: constant `PRINT_OK` is never used
+src\viewer\mod.rs:17799:7: warning: constant `PRINT_ERR` is never used
+src\viewer\mod.rs:17800:7: warning: constant `PRINT_BTN` is never used
+src\viewer\mod.rs:17804:4: warning: function `print_chip` is never used
+src\viewer\mod.rs:17831:4: warning: function `print_setting` is never used
+src\viewer\mod.rs:17844:4: warning: function `print_primary_button_style` is never used
+src\viewer\measure.rs:1692:4: warning: function `measurement_hit` is never used
+src\viewer\measure.rs:2204:4: warning: function `fill_arrow` is never used
+warning: `KINCAD` (lib) generated 141 warnings (run `cargo fix --lib -p KINCAD` to apply 11 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 26.63s

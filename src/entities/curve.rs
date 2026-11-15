@@ -40,7 +40,7 @@ use cadkernel::geom2d::{
 };
 use cadkernel::space::{are_coplanar, coplanarity_tolerance, PlanarCurve, Plane, Vec3};
 
-use crate::modules::draw::modify::spline_ops::spline_to_nurbs_on;
+use crate::entities::spline_ops::spline_to_nurbs_on;
 use crate::scene::model::wire_model::SnapHint;
 use crate::scene::view::transform::ocs_axes;
 

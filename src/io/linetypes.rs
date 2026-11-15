@@ -1,4 +1,4 @@
-//! OpenCADStudio linetype catalog — loaded from `assets/linetypes/OpenCADStudio.lin`.
+//! KINCAD linetype catalog — loaded from `assets/linetypes/KINCAD.lin`.
 //!
 //! Call [`populate_document`] to add all standard linetypes to a new document.
 //! Linetypes that already exist in the document are skipped.
@@ -238,7 +238,7 @@ pub fn resolve_complex_lt(document: &CadDocument, name: &str) -> Option<ComplexL
     }
 }
 
-const LIN_SOURCE: &str = include_str!("../../assets/linetypes/OpenCADStudio.lin");
+const LIN_SOURCE: &str = include_str!("../../assets/linetypes/KINCAD.lin");
 
 // ── Pattern art extraction ────────────────────────────────────────────────
 
@@ -263,7 +263,42 @@ pub fn extract_pattern(desc: &str) -> String {
 
 // ── Public API ────────────────────────────────────────────────────────────
 
-/// Add all standard OpenCADStudio linetypes to `doc`, skipping existing ones.
+/// Alle Linientypen des Katalogs als (Name, Strichbild), z. B. („DASHED“, „__ __ __“).
+pub fn catalog_entries() -> Vec<(String, String)> {
+    LIN_SOURCE
+        .lines()
+        .filter_map(|raw| {
+            let (name, desc) = raw.trim().strip_prefix('*')?.split_once(',')?;
+            Some((name.trim().to_string(), extract_pattern(desc.trim())))
+        })
+        .collect()
+}
+
+/// Einen Linientyp des Katalogs in die Zeichnung aufnehmen (falls er dort fehlt).
+/// Rückgabe: `true`, wenn er danach in der Zeichnung vorhanden ist.
+pub fn add_catalog_linetype(doc: &mut CadDocument, name: &str) -> bool {
+    if doc.line_types.iter().any(|l| l.name.eq_ignore_ascii_case(name)) {
+        return true;
+    }
+    let mut block = String::new();
+    let mut lines = LIN_SOURCE.lines();
+    while let Some(raw) = lines.next() {
+        let line = raw.trim();
+        let Some((n, _)) = line.strip_prefix('*').and_then(|r| r.split_once(',')) else { continue };
+        if n.trim().eq_ignore_ascii_case(name) {
+            block.push_str(line);
+            block.push('\n');
+            if let Some(next) = lines.next() {
+                block.push_str(next.trim());
+                block.push('\n');
+            }
+            break;
+        }
+    }
+    !block.is_empty() && populate_document_from_source(doc, &block) > 0
+}
+
+/// Add all standard KINCAD linetypes to `doc`, skipping existing ones.
 pub fn populate_document(doc: &mut CadDocument) {
     populate_document_from_source(doc, LIN_SOURCE);
 }
@@ -606,5 +641,23 @@ fn push_lt_segment(token: &str, out: &mut Vec<LtSegment>) {
             LtSegment::Dot
         };
         out.push(seg);
+    }
+}
+
+#[cfg(test)]
+mod catalog_tests {
+    use super::*;
+
+    #[test]
+    fn a_known_linetype_is_added_on_demand() {
+        let mut doc = CadDocument::new();
+        let before = doc.line_types.iter().count();
+        assert!(catalog_entries().iter().any(|(n, _)| n == "DASHED"));
+        assert!(add_catalog_linetype(&mut doc, "dashed"));
+        assert_eq!(doc.line_types.iter().count(), before + 1);
+        // Zweiter Aufruf legt nichts doppelt an.
+        assert!(add_catalog_linetype(&mut doc, "DASHED"));
+        assert_eq!(doc.line_types.iter().count(), before + 1);
+        assert!(!add_catalog_linetype(&mut doc, "GIBT_ES_NICHT"));
     }
 }

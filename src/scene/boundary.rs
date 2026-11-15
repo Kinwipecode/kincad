@@ -834,6 +834,34 @@ impl Scene {
         refreshed
     }
 
+    /// Nur die Anzeige-Linien je Objekt (ohne exakte Kurven): die schnelle Quelle
+    /// für den Flächen-Klick. Einträge: (Objekt, Segmente in der Arbeitsebene).
+    pub(crate) fn boundary_segments_by_handle(
+        &self,
+        plane: WorkingPlane,
+        tolerance: f64,
+    ) -> Vec<(Handle, Vec<Line>)> {
+        let wires = if let Some(viewport) = self.active_viewport {
+            self.model_wires_for_viewport_arc(viewport, 0.0)
+        } else if self.current_layout == "Model" {
+            let camera = self.camera.borrow().clone();
+            self.model_tile_wires_arc(0, &camera, 1.0, 1.0)
+        } else {
+            self.paper_sheet_wires_arc()
+        };
+        let mut out: Vec<(Handle, Vec<Line>)> = Vec::new();
+        for wire in wires.iter() {
+            let Some(handle) = Self::handle_from_wire_name(&wire.name) else {
+                continue;
+            };
+            let segments = wire_segments_on_plane(wire, plane, tolerance);
+            if !segments.is_empty() {
+                out.push((handle, segments));
+            }
+        }
+        out
+    }
+
     /// Boundary candidates in the active working plane, with exact curves
     /// where the source entity exposes them.
     pub fn boundary_sources_on_plane(

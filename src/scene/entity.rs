@@ -131,10 +131,15 @@ impl Scene {
         }
         let mut layer = acadrust::tables::Layer::new(name);
         layer.handle = self.document.allocate_handle();
+        // Die EP-Ebene (Einfügepunkt-Marke) wird nicht mitgedruckt: wird sie neu
+        // angelegt, ist „Drucken“ immer ausgeschaltet.
+        if name.eq_ignore_ascii_case(crate::viewer::tools::EP_LAYER) {
+            layer.is_plottable = false;
+        }
         let _ = self.document.layers.add(layer);
     }
 
-    fn ensure_app_id(&mut self, name: &str) {
+    pub(super) fn ensure_app_id(&mut self, name: &str) {
         if name.trim().is_empty() || self.document.app_ids.contains(name) {
             return;
         }
@@ -247,10 +252,22 @@ impl Scene {
         self.add_entity_internal(entity, true)
     }
 
+    /// Neu gezeichnetes Objekt auf die aktuelle Ebene (Auswahlfeld „Ebene“) legen:
+    /// nur wenn es noch auf der Standardebene „0“ liegt und die Ebene existiert.
+    pub fn add_entity_on_current_layer(&mut self, mut entity: EntityType) -> Handle {
+        let current = self.document.header.current_layer_name.clone();
+        if !current.is_empty()
+            && entity.common().layer == "0"
+            && self.document.layers.iter().any(|l| l.name == current)
+        {
+            entity.common_mut().layer = current;
+        }
+        self.add_entity(entity)
+    }
+
     /// Batch-add several entities, publishing geometry changes once at the end.
     /// This is the fast path used by plugin `add_entities` requests.
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn add_entities(&mut self, entities: Vec<EntityType>) -> Vec<Handle> {
+        pub fn add_entities(&mut self, entities: Vec<EntityType>) -> Vec<Handle> {
         let mut handles = Vec::with_capacity(entities.len());
         let mut changes = Vec::with_capacity(entities.len());
         let mut needs_geometry_bump = false;
@@ -910,7 +927,7 @@ impl Scene {
         let local = EntityTransform::Affine(*world_to_block);
         for (old_handle, mut entity) in source_entities {
             view::dispatch::apply_transform(&mut entity, &local);
-            entity = crate::modules::draw::modify::explode::normalize_entity_for_block(entity);
+            entity = crate::entities::explode::normalize_entity_for_block(entity);
             entity.common_mut().handle = Handle::NULL;
             entity.common_mut().owner_handle = br_handle;
             self.document
@@ -987,7 +1004,7 @@ impl Scene {
         let mut entity_handles = Vec::with_capacity(entities.len());
         for mut entity in entities {
             view::dispatch::apply_transform(&mut entity, &local);
-            entity = crate::modules::draw::modify::explode::normalize_entity_for_block(entity);
+            entity = crate::entities::explode::normalize_entity_for_block(entity);
             Self::reset_clone_subhandles(&mut self.document, &mut entity);
             entity.common_mut().handle = Handle::NULL;
             entity.common_mut().owner_handle = br_handle;

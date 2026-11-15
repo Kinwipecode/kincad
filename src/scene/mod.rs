@@ -13,8 +13,10 @@ pub(crate) mod frame;
 pub mod model;
 pub mod pick;
 pub mod pipeline;
+pub mod qselect;
 pub(crate) mod render_graph;
 pub mod text;
+pub mod units;
 pub mod view;
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
@@ -33,6 +35,7 @@ pub(crate) mod dimension_assoc;
 pub(crate) mod centermark;
 mod dwg_native_constraints;
 mod entity;
+pub mod flaechen;
 mod group_layer;
 mod layout;
 mod limits;
@@ -48,7 +51,16 @@ mod scene_markers;
 mod selection;
 pub mod sketch_constraints;
 mod sketch_persist;
+// TEMPORARY diagnostics probe (remove again after debugging):
+pub mod dwg_probe;
+
 mod sketch_solve;
+// Die Modell→Papier-Abbildung eines Viewports: der Layout-Export (außerhalb von
+// `scene`) bildet damit echte Objekte in dieselbe Papierlage ab, in die
+// `viewport_content_wires` die Linien projiziert.
+pub(crate) use project::ViewportPaperMapping;
+
+
 
 pub(crate) use boundary::{
     boundary_entities, boundary_entities_from_sources, boundary_faces,
@@ -170,6 +182,76 @@ struct SceneDependencyIndex {
     text_geometry: DependencyTargets,
     annotation_geometry: DependencyTargets,
     signatures: HashMap<Handle, u64>,
+}
+
+/// World point of a wire vertex: the `f32` grid value plus its low-bit residual
+/// (double-single split — see `WireModel::points_low`).
+/// Schnittpunkt zweier Strecken. Liegen sie windschief im Raum, gibt es keinen
+/// (Abstand der engsten Stellen größer als eine kleine Toleranz); parallele
+/// Strecken schneiden sich nicht.
+fn segment_intersection(
+    p1: glam::DVec3,
+    p2: glam::DVec3,
+    q1: glam::DVec3,
+    q2: glam::DVec3,
+) -> Option<glam::DVec3> {
+    let d1 = p2 - p1;
+    let d2 = q2 - q1;
+    let r = p1 - q1;
+    let a = d1.dot(d1);
+    let e = d2.dot(d2);
+    if a < 1e-18 || e < 1e-18 {
+        return None;
+    }
+    let b = d1.dot(d2);
+    let denom = a * e - b * b;
+    if denom.abs() < 1e-12 * a * e {
+        return None;
+    }
+    let c = d1.dot(r);
+    let f = d2.dot(r);
+    let s = (b * f - c * e) / denom;
+    let t = (a * f - b * c) / denom;
+    if !(0.0..=1.0).contains(&s) || !(0.0..=1.0).contains(&t) {
+        return None;
+    }
+    let ps = p1 + d1 * s;
+    let qt = q1 + d2 * t;
+    let tol = 1e-6 * (a.sqrt() + e.sqrt()).max(1.0);
+    (ps.distance(qt) <= tol).then_some((ps + qt) * 0.5)
+}
+
+/// Schnitt zweier Strecken im Bild; liefert die Parameter `(s, t)` entlang
+/// `a1→a2` und `b1→b2` (beide in `0..=1`).
+fn screen_segment_intersection(
+    a1: glam::Vec2,
+    a2: glam::Vec2,
+    b1: glam::Vec2,
+    b2: glam::Vec2,
+) -> Option<(f64, f64)> {
+    let d1 = a2 - a1;
+    let d2 = b2 - b1;
+    let denom = d1.x * d2.y - d1.y * d2.x;
+    if denom.abs() < 1e-9 {
+        return None;
+    }
+    let r = b1 - a1;
+    let s = (r.x * d2.y - r.y * d2.x) / denom;
+    let t = (r.x * d1.y - r.y * d1.x) / denom;
+    if !(0.0..=1.0).contains(&s) || !(0.0..=1.0).contains(&t) {
+        return None;
+    }
+    Some((s as f64, t as f64))
+}
+
+fn wire_point_f64(wire: &model::wire_model::WireModel, index: usize) -> glam::DVec3 {
+    let high = wire.points[index];
+    let low = wire.points_low.get(index).copied().unwrap_or([0.0; 3]);
+    glam::DVec3::new(
+        high[0] as f64 + low[0] as f64,
+        high[1] as f64 + low[1] as f64,
+        high[2] as f64 + low[2] as f64,
+    )
 }
 
 fn hatch_interaction_aabb(hatch: &model::hatch_model::HatchModel) -> Option<[f64; 4]> {
@@ -738,6 +820,15 @@ pub fn build_derived_caches(doc: &CadDocument) -> DerivedCaches {
     build_derived_caches_impl(doc, None, None)
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn build_derived_caches_with_progress(
+    doc: &CadDocument,
+    _progress: &(dyn Fn(u16) + Sync),
+    _material_base_dir: Option<&std::path::Path>,
+) -> DerivedCaches {
+    build_derived_caches_impl(doc, None, None)
+}
+
 /// Build open-time caches while reporting monotonic progress in 0..=10000.
 ///
 /// The callback is UI-agnostic and may run from Rayon workers. Callers should
@@ -977,6 +1068,7 @@ fn build_derived_caches_impl(
     let mut meshes: HashMap<Handle, MeshLodSet> = HashMap::default();
     let mut block_meshes: HashMap<Handle, MeshLodSet> = HashMap::default();
     for (handle, mut m, top_level) in built {
+        crate::dbg_tap!("built {handle:?} top_level={top_level}");
         if top_level {
             meshes.insert(handle, m);
         } else {
@@ -984,7 +1076,6 @@ fn build_derived_caches_impl(
             block_meshes.insert(handle, m);
         }
     }
-
     if let Some(progress) = progress {
         progress(10000);
     }
@@ -1558,6 +1649,16 @@ type BlockMembers = (u64, HashMap<Handle, Vec<Handle>>);
 
 pub struct Scene {
     pub camera: Rc<RefCell<Camera>>,
+    /// Flächen: Millimeter je Zeichnungseinheit (aus „Einheit & Maßstab“), Anzeige in m².
+    pub area_mm_per_unit: f64,
+    /// Feste Texthöhe der Flächentexte (Zeichnungseinheiten); `None` = automatisch.
+    pub area_text_height: Option<f64>,
+    /// Linienabstand der Flächenschraffur in mm; `None` = automatisch (nach Raumgröße).
+    pub area_hatch_spacing_mm: Option<f64>,
+    /// Schraffurmuster der Flächen (Name im Musterkatalog).
+    pub area_hatch_pattern: String,
+    /// Flächen: Nachkommastellen des Flächentextes.
+    pub area_decimals: usize,
     /// View saved immediately before the latest navigation operation. ZOOM
     /// Previous swaps with this snapshot, allowing the user to toggle between
     /// the two most recent views without touching drawing history.
@@ -1626,6 +1727,10 @@ pub struct Scene {
     /// Currently selected entity handles.
     pub selected: HashSet<Handle>,
     selected_order: Vec<Handle>,
+    /// Zuletzt bekannter, nicht leerer Stand der Auswahl (Reihenfolge).
+    selection_snapshot: Vec<Handle>,
+    /// Die Auswahl, die zuletzt aufgehoben wurde — „Zuletzt gewählt“.
+    last_selection: Vec<Handle>,
     /// Session-only ISOLATEOBJECTS / HIDEOBJECTS state. Never written to DWG/DXF.
     pub object_isolation: ObjectIsolationState,
     /// Entity handles temporarily removed from the base render while an
@@ -1641,6 +1746,19 @@ pub struct Scene {
     /// edited geometry stands out while the surrounding drawing stays visible
     /// for context. `None` = not editing. (#136)
     pub refedit_keep: Option<HashSet<Handle>>,
+    /// Blocknamen **gesperrter externer Referenzen**. Der Zustand steht im
+    /// Fenster „Referenzen" (`xref_state.json`); der `Viewer` reicht ihn hierher,
+    /// damit jede Änderungs- und Löschprüfung ihn sieht — genau wie bei einem
+    /// gesperrten Layer.
+    pub xref_locks: Vec<String>,
+    /// Flächenerkennung: Linienstücke der Zeichnung je Objekt, je Geometriestand
+    /// gemerkt (Schlüssel: Geometriestand + Layout).
+    pub(crate) area_seg_cache: std::cell::RefCell<
+        Option<(u64, String, std::sync::Arc<Vec<(Handle, Vec<cadkernel::geom2d::Line>)>>)>,
+    >,
+    /// Per Umschalt-Klick „festgenagelte“ Linien (Anfang, Ende): sie gelten bei der
+    /// Konturerkennung verlängert als Wand und schließen so Lücken.
+    pub area_pins: Vec<([f64; 2], [f64; 2])>,
     /// Entity drawn with the selection-highlight colour without being part
     /// of the real selection — used to preview a row in the cycling list box.
     pub hover_highlight: Option<Handle>,
@@ -2165,10 +2283,15 @@ impl Scene {
             lighting_cache: RefCell::new(HashMap::default()),
             selected: HashSet::default(),
             selected_order: Vec::new(),
+            selection_snapshot: Vec::new(),
+            last_selection: Vec::new(),
             object_isolation: ObjectIsolationState::default(),
             preview_hidden: HashSet::default(),
             command_preview_hidden: HashSet::default(),
             refedit_keep: None,
+            xref_locks: Vec::new(),
+            area_seg_cache: std::cell::RefCell::new(None),
+            area_pins: Vec::new(),
             hover_highlight: None,
             selection_color: crate::scene::model::wire_model::WireModel::SELECTED,
             selection_effect: true,
@@ -2242,6 +2365,11 @@ impl Scene {
             layout_type_names_cache: RefCell::new(None),
             dependency_index_cache: RefCell::new(None),
             associative_hatch_source_cache: RefCell::new(None),
+            area_mm_per_unit: 1.0,
+            area_text_height: None,
+            area_hatch_spacing_mm: None,
+            area_hatch_pattern: "ANSI31".to_string(),
+            area_decimals: 2,
             sketch_constraints: Vec::new(),
             named_parameters: named_parameters::ParameterTable::new(),
             has_associative_centers: std::cell::Cell::new(None),
@@ -2837,6 +2965,16 @@ impl Scene {
                 changes.push(change);
             }
         }
+        for change in self.refresh_area_labels(&changes) {
+            if !changes.iter().any(|(handle, _)| *handle == change.0) {
+                changes.push(change);
+            }
+        }
+        for change in self.refresh_area_sum_leaders(&changes) {
+            if !changes.iter().any(|(handle, _)| *handle == change.0) {
+                changes.push(change);
+            }
+        }
         if !self.sketch_constraints.is_empty() {
             for change in self.refresh_sketch_constraints(&changes) {
                 if !changes.iter().any(|(handle, _)| *handle == change.0) {
@@ -3049,7 +3187,40 @@ impl Scene {
 
     pub(crate) fn bump_selection_set(&mut self) {
         self.selection_fingerprint_dirty = true;
+        // „Zuletzt gewählt“: wird die Auswahl leer, bleibt der letzte nicht leere
+        // Stand für den Knopf erhalten.
+        if self.selected.is_empty() {
+            if !self.selection_snapshot.is_empty() {
+                self.last_selection = std::mem::take(&mut self.selection_snapshot);
+            }
+        } else if self.selection_snapshot != self.selected_order {
+            self.selection_snapshot = self.selected_order.clone();
+        }
         self.bump_selection();
+    }
+
+    /// Gibt es eine zuletzt aufgehobene Auswahl, die sich wieder markieren lässt?
+    pub fn has_last_selection(&self) -> bool {
+        self.last_selection
+            .iter()
+            .any(|handle| self.document.get_entity(*handle).is_some())
+    }
+
+    /// „Zuletzt gewählt“: die zuletzt aufgehobene Auswahl noch einmal markieren.
+    /// Objekte, die es nicht mehr gibt, fallen weg. Liefert die Zahl der markierten
+    /// Objekte.
+    pub fn reselect_last(&mut self) -> usize {
+        let handles: HashSet<Handle> = self
+            .last_selection
+            .iter()
+            .copied()
+            .filter(|handle| self.document.get_entity(*handle).is_some())
+            .collect();
+        if handles.is_empty() {
+            return 0;
+        }
+        self.replace_selection(handles);
+        self.selected.len()
     }
 
     /// Milliseconds after the last camera change during which the view counts as
@@ -3513,6 +3684,31 @@ impl Scene {
         self.document.header.show_model_space = self.current_layout == "Model";
         crate::io::set_saved_active_layout(&mut self.document, &self.current_layout);
     }
+    /// Nur die zwei Werte, die [`Scene::camera_for_viewport`] für seine
+    /// Ansichts-Heuristik braucht: Median-Zentrum und Streuung der
+    /// Modellgeometrie.
+    ///
+    /// Der Layout-Export baut eine Ansicht damit nach, ohne die teuren Caches
+    /// (Hatches, Meshes, Bilder) zu erzeugen — mit den Standardwerten
+    /// (`1e9` / `[0,0]`) würde seine Projektion in dem Fall, in dem ein
+    /// Viewport keine brauchbare gespeicherte Ansicht hat, anders automatisch
+    /// einpassen als das Fenster und die flachgelegte Geometrie sähe anders aus
+    /// als das Blatt.
+    pub fn prime_view_heuristics(&mut self) {
+        let model_block = self.document.header.model_space_block_handle;
+        let prep = offset_prep(&self.document, model_block);
+        let mut centers: Vec<[f64; 3]> = Vec::new();
+        for entity in self.document.entities() {
+            if let Some(center) = offset_centroid(entity, model_block, &prep) {
+                centers.push(center);
+            }
+        }
+        let (center, extent) = cluster_extent_from_centers(centers, &self.document.header);
+        self.local_center = center;
+        self.local_extent_max = extent;
+    }
+
+
 
     pub(crate) fn layout_sheet_viewport_handle(
         document: &acadrust::CadDocument,
@@ -4309,7 +4505,7 @@ impl Scene {
             4 // Millimeters
         };
 
-        crate::modules::draw::units::conversion_factor(
+        units::conversion_factor(
             self.document.header.insertion_units,
             paper_unit,
         )
@@ -7474,6 +7670,50 @@ impl Scene {
             .unwrap_or(false)
     }
 
+    /// True, wenn `handle` das INSERT einer **externen Referenz** ist.
+    ///
+    /// Eine Referenz wird in der Zeichnung **nie** gelöscht: ein Klick daneben
+    /// träfe sonst die ganze eingebundene Zeichnung. Weg kommt sie nur über das
+    /// Fenster „Referenzen" (`Viewer::detach_xref`).
+    pub fn is_xref_reference(&self, handle: Handle) -> bool {
+        match self.document.get_entity(handle) {
+            Some(EntityType::Insert(insert)) => self
+                .document
+                .block_records
+                .get(&insert.block_name)
+                .map(|record| record.flags.is_xref || record.flags.is_xref_overlay)
+                .unwrap_or(false),
+            _ => false,
+        }
+    }
+
+    /// True, wenn `handle` zu einer **Referenz** gehört — das INSERT selbst oder
+    /// ein Objekt, das aus der Referenz eingemischt wurde. Solche Objekte lassen
+    /// sich in der Zeichnung weder verschieben noch ändern: die Lage steht allein
+    /// im Fenster „Referenzen“ (dort X/Y der Referenz). Blöcke bleiben frei.
+    pub fn is_xref_locked(&self, handle: Handle) -> bool {
+        let Some(entity) = self.document.get_entity(handle) else {
+            return false;
+        };
+        let is_ref = |name: &str| {
+            self.document
+                .block_records
+                .get(name)
+                .is_some_and(|r| r.flags.is_xref || r.flags.is_xref_overlay)
+        };
+        if let EntityType::Insert(insert) = entity {
+            if is_ref(&insert.block_name) {
+                return true;
+            }
+        }
+        let owner = entity.common().owner_handle;
+        self.document
+            .block_records
+            .iter()
+            .find(|record| record.handle == owner)
+            .is_some_and(|record| record.flags.is_xref || record.flags.is_xref_overlay)
+    }
+
     /// The name of the locked layer `handle` sits on, if any (for messages).
     pub fn locked_layer_name(&self, handle: Handle) -> Option<String> {
         let name = self
@@ -8561,6 +8801,279 @@ impl Scene {
         )
     }
 
+    /// Object-snap candidates within `radius_px` of the cursor: the wire's own
+    /// snap points, its key vertices (endpoints) and the midpoints between them,
+    /// as `(screen distance, world point, hint)`.
+    ///
+    /// Measured in **screen** space, so the aperture is a circle on screen at
+    /// any view angle, and only what is really inside the viewport counts.
+    ///
+    /// Works with **and** without the spatial index: below
+    /// [`INTERACTION_INDEX_MIN_WIRES`](Self::INTERACTION_INDEX_MIN_WIRES)
+    /// `interaction_candidates_near` hands back the whole wire set with `None`
+    /// in all reference lists, so the wires are enumerated directly here —
+    /// without that branch OSNAP found nothing at all in a small drawing.
+    pub fn snap_candidates_near(
+        &self,
+        wires: Arc<Vec<WireModel>>,
+        cursor: iced::Point,
+        bounds: iced::Rectangle,
+        radius_px: f32,
+        base: Option<glam::DVec3>,
+    ) -> Vec<(f32, glam::DVec3, crate::scene::model::wire_model::SnapHint)> {
+        use crate::scene::model::wire_model::SnapHint;
+
+        let (view_rot, eye) = {
+            let camera = self.camera.borrow();
+            (camera.view_proj_rte(bounds), camera.eye())
+        };
+        let raw = self
+            .camera
+            .borrow()
+            .pick_on_target_plane(cursor, bounds);
+        let cands = self.interaction_candidates_near(wires, raw, view_rot, eye, bounds, radius_px);
+
+        let camera = self.camera.borrow();
+        let mut found: Vec<(f32, glam::DVec3, SnapHint)> = Vec::new();
+        let mut consider = |p: glam::DVec3, hint: SnapHint| {
+            let Some(screen) = camera.project(p, bounds) else {
+                return;
+            };
+            let inside = screen.x >= 0.0
+                && screen.y >= 0.0
+                && screen.x <= bounds.width
+                && screen.y <= bounds.height;
+            if !inside {
+                return;
+            }
+            let distance = (screen.x - cursor.x).hypot(screen.y - cursor.y);
+            if distance > radius_px {
+                return;
+            }
+            found.push((distance, p, hint));
+        };
+
+        if let Some(points) = cands.snap_points() {
+            for pr in points {
+                if let Some(&(world, hint)) = cands
+                    .source_wire(pr.wire)
+                    .and_then(|wire| wire.snap_pts.get(pr.index as usize))
+                {
+                    consider(world, hint);
+                }
+            }
+        }
+        if let Some(vertices) = cands.key_vertices() {
+            for vr in vertices {
+                if let Some(&point) = cands
+                    .source_wire(vr.wire)
+                    .and_then(|wire| wire.key_vertices.get(vr.index as usize))
+                {
+                    consider(glam::DVec3::from_array(point), SnapHint::Endpoint);
+                }
+            }
+        }
+        if let Some(segments) = cands.key_segments() {
+            for sr in segments {
+                let Some(wire) = cands.source_wire(sr.wire) else {
+                    continue;
+                };
+                if let (Some(&a), Some(&b)) = (
+                    wire.key_vertices.get(sr.start as usize),
+                    wire.key_vertices.get(sr.start as usize + 1),
+                ) {
+                    let (a, b) = (glam::DVec3::from_array(a), glam::DVec3::from_array(b));
+                    if a.distance_squared(b) > 1e-12 {
+                        consider((a + b) * 0.5, SnapHint::Midpoint);
+                    }
+                }
+            }
+        }
+        // No index: the candidate list is the whole wire set and every reference
+        // list above is `None` — read the snap data straight off the wires.
+        if cands.snap_points().is_none() && cands.key_vertices().is_none() {
+            for wire in cands.iter() {
+                for (world, hint) in &wire.snap_pts {
+                    consider(*world, *hint);
+                }
+                for vertex in &wire.key_vertices {
+                    consider(glam::DVec3::from_array(*vertex), SnapHint::Endpoint);
+                }
+                for pair in wire.key_vertices.windows(2) {
+                    let a = glam::DVec3::from_array(pair[0]);
+                    let b = glam::DVec3::from_array(pair[1]);
+                    if a.distance_squared(b) > 1e-12 {
+                        consider((a + b) * 0.5, SnapHint::Midpoint);
+                    }
+                }
+            }
+        }
+        // Tessellated open curves carry no key vertices; their real endpoints are
+        // the first / last tessellation point. Closed curves are skipped — their
+        // first point is no endpoint.
+        for wire in cands.iter().filter(|w| w.key_vertices.is_empty()) {
+            let closed = wire
+                .snap_pts
+                .iter()
+                .any(|(_, hint)| matches!(hint, SnapHint::Quadrant));
+            if closed {
+                continue;
+            }
+            if !wire.points.is_empty() {
+                consider(wire_point_f64(wire, 0), SnapHint::Endpoint);
+            }
+            if wire.points.len() > 1 {
+                consider(
+                    wire_point_f64(wire, wire.points.len() - 1),
+                    SnapHint::Endpoint,
+                );
+            }
+        }
+        // Schnittpunkt und nächster Punkt entstehen aus der gezeichneten
+        // Geometrie: erst alle Segmente sammeln, die im Fangradius am Cursor
+        // vorbeilaufen, dann paarweise schneiden.
+        struct Seg {
+            wire: usize,
+            index: usize,
+            a: glam::DVec3,
+            b: glam::DVec3,
+            sa: glam::Vec2,
+            sb: glam::Vec2,
+        }
+        let cursor_v = glam::Vec2::new(cursor.x, cursor.y);
+        let mut segs: Vec<Seg> = Vec::new();
+        'wires: for (wire_idx, wire) in cands.iter().enumerate() {
+            if wire.point_marker.is_some() || !wire.text_verts.is_empty() {
+                continue;
+            }
+            let mut prev: Option<(glam::DVec3, glam::Vec2)> = None;
+            for i in 0..wire.points.len() {
+                let h = wire.points[i];
+                if !(h[0].is_finite() && h[1].is_finite() && h[2].is_finite()) {
+                    prev = None;
+                    continue;
+                }
+                let p = wire_point_f64(wire, i);
+                let Some(s) = camera.project(p, bounds) else {
+                    prev = None;
+                    continue;
+                };
+                if let Some((pp, ps)) = prev {
+                    let d = s - ps;
+                    let len2 = d.length_squared();
+                    let t = if len2 > 1e-12 {
+                        ((cursor_v - ps).dot(d) / len2).clamp(0.0, 1.0)
+                    } else {
+                        0.0
+                    };
+                    let closest = ps + d * t;
+                    if (closest - cursor_v).length() <= radius_px {
+                        segs.push(Seg { wire: wire_idx, index: i, a: pp, b: p, sa: ps, sb: s });
+                        if segs.len() >= 400 {
+                            break 'wires;
+                        }
+                    }
+                }
+                prev = Some((p, s));
+            }
+        }
+        for seg in &segs {
+            // Nächster Punkt auf dem Segment (im Bild gerechnet).
+            let d = seg.sb - seg.sa;
+            let len2 = d.length_squared();
+            if len2 > 1e-12 {
+                let t = ((cursor_v - seg.sa).dot(d) / len2).clamp(0.0, 1.0) as f64;
+                consider(seg.a + (seg.b - seg.a) * t, SnapHint::Nearest);
+            }
+        }
+        if let Some(base) = base {
+            // Lot: Fußpunkt vom Bezugspunkt auf jedes Segment in Reichweite.
+            for seg in &segs {
+                let d = seg.b - seg.a;
+                let len2 = d.length_squared();
+                if len2 < 1e-18 {
+                    continue;
+                }
+                let t = (base - seg.a).dot(d) / len2;
+                if (0.0..=1.0).contains(&t) {
+                    consider(seg.a + d * t, SnapHint::Perpendicular);
+                }
+            }
+            // Tangente: Berührpunkte vom Bezugspunkt an Kreise und Bögen.
+            use crate::scene::model::wire_model::TangentGeom;
+            for wire in cands.iter() {
+                for geom in &wire.tangent_geoms {
+                    let (center, ax, ay, radius, span) = match geom {
+                        TangentGeom::PlanarCircle { center, axis_x, axis_y, radius } => (
+                            glam::DVec3::from_array(*center),
+                            glam::DVec3::from_array(*axis_x),
+                            glam::DVec3::from_array(*axis_y),
+                            *radius,
+                            None,
+                        ),
+                        TangentGeom::Circle { center, radius } => (
+                            glam::DVec3::new(center[0] as f64, center[1] as f64, center[2] as f64),
+                            glam::DVec3::X,
+                            glam::DVec3::Y,
+                            *radius as f64,
+                            None,
+                        ),
+                        TangentGeom::Arc { center, axis_x, axis_y, radius, start_angle, end_angle } => (
+                            glam::DVec3::from_array(*center),
+                            glam::DVec3::from_array(*axis_x),
+                            glam::DVec3::from_array(*axis_y),
+                            *radius,
+                            Some((*start_angle, *end_angle)),
+                        ),
+                        _ => continue,
+                    };
+                    let rel = base - center;
+                    let (px, py) = (rel.dot(ax), rel.dot(ay));
+                    let dist = px.hypot(py);
+                    if radius <= 0.0 || dist <= radius * (1.0 + 1e-9) {
+                        continue;
+                    }
+                    let phi = py.atan2(px);
+                    let alpha = (radius / dist).acos();
+                    for theta in [phi + alpha, phi - alpha] {
+                        if let Some((start, end)) = span {
+                            let tau = std::f64::consts::TAU;
+                            let sweep = (end - start).rem_euclid(tau);
+                            let off = (theta - start).rem_euclid(tau);
+                            if off > sweep {
+                                continue;
+                            }
+                        }
+                        consider(
+                            center + (ax * theta.cos() + ay * theta.sin()) * radius,
+                            SnapHint::Tangent,
+                        );
+                    }
+                }
+            }
+        }
+        for (i, s1) in segs.iter().enumerate() {
+            for s2 in &segs[i + 1..] {
+                // Benachbarte Segmente derselben Linie treffen sich in einer
+                // Ecke — das ist ein Endpunkt, kein Schnittpunkt.
+                if s1.wire == s2.wire && s2.index.abs_diff(s1.index) <= 1 {
+                    continue;
+                }
+                // Erst exakt im Raum; sonst als „scheinbarer Schnittpunkt“ im Bild
+                // (zwei Linien mit leicht verschiedener Höhe kreuzen sich nie
+                // wirklich, sehen aber in der Draufsicht wie ein Schnitt aus).
+                if let Some(p) = segment_intersection(s1.a, s1.b, s2.a, s2.b) {
+                    consider(p, SnapHint::Intersection);
+                } else if let Some((s, t)) = screen_segment_intersection(s1.sa, s1.sb, s2.sa, s2.sb) {
+                    let ps = s1.a + (s1.b - s1.a) * s;
+                    let qt = s2.a + (s2.b - s2.a) * t;
+                    consider((ps + qt) * 0.5, SnapHint::Intersection);
+                }
+            }
+        }
+        found
+    }
+
     pub fn interaction_pick_candidates_near(
         &self,
         wires: Arc<Vec<WireModel>>,
@@ -9157,14 +9670,26 @@ impl Scene {
         &self,
         bounds: iced::Rectangle,
     ) -> Option<glam::DVec3> {
+        self.view_surface_pivot_at(
+            bounds,
+            iced::Point::new(bounds.width * 0.5, bounds.height * 0.5),
+        )
+    }
+
+    /// The point of a 3D solid's surface under `cursor` (viewport pixels) —
+    /// where a grab with the mouse lands, and so what an orbit turns about.
+    pub fn view_surface_pivot_at(
+        &self,
+        bounds: iced::Rectangle,
+        cursor: iced::Point,
+    ) -> Option<glam::DVec3> {
         let camera = self.camera.borrow();
         let view_rot = camera.view_proj_rte(bounds);
         let eye = camera.eye();
         drop(camera);
         let meshes = self.interaction_meshes_arc();
-        let center = iced::Point::new(bounds.width * 0.5, bounds.height * 0.5);
         pick::hit_test::mesh_click_point(
-            center,
+            cursor,
             meshes.iter().filter_map(|set| {
                 let handle = set.entity_handle()?;
                 let mesh = set.geometry_lods().first()?;
@@ -12615,3 +13140,122 @@ mod layout_cache_tests {
     }
 }
 
+
+#[cfg(test)]
+mod snap_intersection_tests {
+    use super::*;
+    use crate::scene::model::wire_model::SnapHint;
+    use acadrust::entities::Line;
+    use acadrust::types::Vector3;
+
+    /// Cursor `dx` px beside the projected `target`; true when an
+    /// Intersection candidate at `target` comes back.
+    fn hits(scene: &Scene, target: glam::DVec3, dx: f32) -> bool {
+        let bounds = iced::Rectangle::new(iced::Point::ORIGIN, iced::Size::new(1200.0, 700.0));
+        let screen = scene.camera.borrow().project(target, bounds).unwrap();
+        let cursor = iced::Point::new(screen.x + dx, screen.y);
+        let wires = scene.hit_test_wires();
+        let c = scene.snap_candidates_near(wires, cursor, bounds, 15.0, None);
+        println!("candidates: {c:?}");
+        c.iter().any(|(_, p, h)| {
+            matches!(h, SnapHint::Intersection) && p.distance(target) < 1e-3
+        })
+    }
+
+    fn cross(z2: f64) -> Scene {
+        let mut scene = Scene::new();
+        scene.add_entity(EntityType::Line(Line::from_points(
+            Vector3::new(0.0, 0.0, 0.0),
+            Vector3::new(10.0, 10.0, 0.0),
+        )));
+        scene.add_entity(EntityType::Line(Line::from_points(
+            Vector3::new(0.0, 10.0, z2),
+            Vector3::new(10.0, 0.0, z2),
+        )));
+        scene.fit_all();
+        scene
+    }
+
+    #[test]
+    fn crossing_lines_flat() {
+        assert!(hits(&cross(0.0), glam::DVec3::new(5.0, 5.0, 0.0), 6.0));
+    }
+
+    #[test]
+    fn crossing_lines_tiny_z_offset() {
+        assert!(hits(&cross(1e-4), glam::DVec3::new(5.0, 5.0, 0.0), 6.0));
+    }
+
+    #[test]
+    fn t_junction() {
+        let mut scene = Scene::new();
+        scene.add_entity(EntityType::Line(Line::from_points(
+            Vector3::new(0.0, 0.0, 0.0),
+            Vector3::new(10.0, 0.0, 0.0),
+        )));
+        scene.add_entity(EntityType::Line(Line::from_points(
+            Vector3::new(5.0, 0.0, 0.0),
+            Vector3::new(5.0, 6.0, 0.0),
+        )));
+        scene.fit_all();
+        assert!(hits(&scene, glam::DVec3::new(5.0, 0.0, 0.0), 5.0));
+    }
+}
+
+#[cfg(test)]
+mod last_selection_tests {
+    use super::*;
+    use acadrust::entities::Line;
+    use acadrust::types::Vector3;
+
+    fn line(x: f64) -> EntityType {
+        EntityType::Line(Line::from_points(
+            Vector3::new(x, 0.0, 0.0),
+            Vector3::new(x + 1.0, 0.0, 0.0),
+        ))
+    }
+
+    #[test]
+    fn the_last_selection_can_be_marked_again_after_deselecting() {
+        let mut scene = Scene::new();
+        let a = scene.add_entity(line(0.0));
+        let b = scene.add_entity(line(5.0));
+        let c = scene.add_entity(line(10.0));
+        assert!(!scene.has_last_selection());
+        assert_eq!(scene.reselect_last(), 0);
+
+        scene.select_entity(a, true);
+        scene.select_entity(b, false);
+        assert!(!scene.has_last_selection(), "solange markiert ist, gibt es nichts „Zuletzt“");
+        scene.deselect_all();
+        assert!(scene.selected.is_empty());
+        assert!(scene.has_last_selection());
+
+        assert_eq!(scene.reselect_last(), 2);
+        assert!(scene.selected.contains(&a) && scene.selected.contains(&b));
+        assert!(!scene.selected.contains(&c));
+
+        // Eine spätere Auswahl und ihr Aufheben ersetzt „Zuletzt gewählt“.
+        scene.deselect_all();
+        scene.select_entity(c, true);
+        scene.deselect_all();
+        assert_eq!(scene.reselect_last(), 1);
+        assert!(scene.selected.contains(&c));
+    }
+
+    #[test]
+    fn erased_objects_drop_out_of_the_last_selection() {
+        let mut scene = Scene::new();
+        let a = scene.add_entity(line(0.0));
+        let b = scene.add_entity(line(5.0));
+        scene.select_entity(a, true);
+        scene.select_entity(b, false);
+        scene.deselect_all();
+        scene.erase_entities(&[a]);
+        assert_eq!(scene.reselect_last(), 1);
+        assert!(scene.selected.contains(&b) && !scene.selected.contains(&a));
+        scene.deselect_all();
+        scene.erase_entities(&[b]);
+        assert!(!scene.has_last_selection());
+    }
+}

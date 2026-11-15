@@ -9,7 +9,7 @@
 // Zoom:      adjusts `distance` (exponential feel).
 // Snap:      directly assigns yaw+pitch encoded as a quaternion (for ViewCube).
 //
-// Coordinate convention: Z-up world space (same as the rest of OpenCADStudio).
+// Coordinate convention: Z-up world space (same as the rest of KINCAD).
 
 use glam::camera::rh::proj::directx::{orthographic, perspective};
 use glam::camera::rh::view::look_at_mat4;
@@ -882,6 +882,53 @@ mod tests {
                 before.dot(cam.rotation).abs() < 0.999_999,
                 "vertical orbit stalled at step {step}"
             );
+        }
+    }
+
+    /// Orbiting a 3-D box must keep every corner between near and far.
+    ///
+    /// The depth range is re-derived from the model box for the live eye
+    /// direction exactly so that rotating the drawing never clips it (#473);
+    /// this is the proof that the 3D-Orbit gesture can rely on it. The screen
+    /// check is deliberately generous — the fit is computed for ONE orientation,
+    /// so a rotated box may stick out of the frame, but it must not run away
+    /// (that would mean the pivot arithmetic moved the view instead of turning
+    /// it).
+    #[test]
+    fn orbiting_a_box_never_clips_a_corner() {
+        let bounds = Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: 1600.0,
+            height: 900.0,
+        };
+        let min = DVec3::new(-50.0, -30.0, 0.0);
+        let max = DVec3::new(50.0, 30.0, 40.0);
+        let centre = (min + max) * 0.5;
+        let mut cam = Camera::default();
+        cam.fit_to_bounds_f64(min, max, bounds.width / bounds.height);
+
+        for step in 0..120 {
+            cam.orbit(6.0, 2.5, Some(centre));
+            let (near, far) = cam.ortho_depth_range();
+            for index in 0..8 {
+                let corner = DVec3::new(
+                    if index & 1 == 0 { min.x } else { max.x },
+                    if index & 2 == 0 { min.y } else { max.y },
+                    if index & 4 == 0 { min.z } else { max.z },
+                );
+                let local = cam.rotation.inverse() * (corner - cam.target).as_vec3();
+                let depth = cam.distance - local.z;
+                assert!(
+                    depth > near && depth < far,
+                    "step {step}: {corner:?} at depth {depth} outside near/far ({near}, {far})"
+                );
+                let pixel = cam.project(corner, bounds).expect("corner behind the eye");
+                assert!(
+                    pixel.x.abs() < bounds.width * 1.5 && pixel.y.abs() < bounds.height * 1.5,
+                    "step {step}: {corner:?} projected far outside the canvas at {pixel:?}"
+                );
+            }
         }
     }
 

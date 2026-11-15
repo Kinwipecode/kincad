@@ -1,102 +1,6 @@
 // Small platform shims for things the desktop build does natively but the web
 // (wasm) build must handle differently or skip.
 
-/// Open a URL in the user's browser.
-///
-/// Wayland requires an xdg-activation token from the source window before it
-/// will let an existing browser window take focus. Linux obtains that token
-/// from the OCS surface and passes it to xdg-open.
-#[cfg(target_os = "linux")]
-pub fn open_url<Message: Send + 'static>(
-    url: &str,
-    parent: Option<iced::window::Id>,
-) -> iced::Task<Message> {
-    let url = url.to_string();
-    match parent {
-        Some(parent) => iced::window::run(parent, move |window| {
-            open_url_linux(&url, linux_activation_token(window));
-        })
-        .discard(),
-        None => {
-            let _ = open::that_detached(url);
-            iced::Task::none()
-        }
-    }
-}
-
-#[cfg(target_os = "linux")]
-fn linux_activation_token(window: &dyn iced::window::Window) -> Option<String> {
-    use iced::window::raw_window_handle::{RawDisplayHandle, RawWindowHandle};
-
-    let RawWindowHandle::Wayland(window_handle) =
-        window.window_handle().ok()?.as_raw()
-    else {
-        return None;
-    };
-    let RawDisplayHandle::Wayland(display_handle) =
-        window.display_handle().ok()?.as_raw()
-    else {
-        return None;
-    };
-
-    // Keep the iced window borrowed while ashpd uses its raw Wayland surface.
-    // The returned token is an owned string and is immediately handed to the
-    // child process.
-    unsafe {
-        iced::futures::executor::block_on(
-            ashpd::ActivationToken::from_wayland_raw(
-                None,
-                window_handle.surface.as_ptr(),
-                display_handle.display.as_ptr(),
-            ),
-        )
-    }
-    .map(String::from)
-}
-
-#[cfg(target_os = "linux")]
-fn open_url_linux(url: &str, activation_token: Option<String>) {
-    let Some(token) = activation_token else {
-        let _ = open::that_detached(url);
-        return;
-    };
-
-    let mut command = std::process::Command::new("xdg-open");
-    command
-        .arg(url)
-        .env("XDG_ACTIVATION_TOKEN", &token)
-        .env("DESKTOP_STARTUP_ID", token);
-
-    if let Ok(mut child) = command.spawn() {
-        std::thread::spawn(move || {
-            let _ = child.wait();
-        });
-    } else {
-        let _ = open::that_detached(url);
-    }
-}
-
-#[cfg(all(not(target_arch = "wasm32"), not(target_os = "linux")))]
-pub fn open_url<Message>(
-    url: &str,
-    _parent: Option<iced::window::Id>,
-) -> iced::Task<Message> {
-    let _ = open::that_detached(url);
-    iced::Task::none()
-}
-
-/// Web opens the tab synchronously so the browser still sees the click as a
-/// user gesture and does not block it as a pop-up.
-#[cfg(target_arch = "wasm32")]
-pub fn open_url<Message>(
-    url: &str,
-    _parent: Option<iced::window::Id>,
-) -> iced::Task<Message> {
-    if let Some(window) = web_sys::window() {
-        let _ = window.open_with_url_and_target(url, "_blank");
-    }
-    iced::Task::none()
-}
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
@@ -291,6 +195,30 @@ pub fn handle_path(h: &rfd::FileHandle) -> std::path::PathBuf {
     std::path::PathBuf::from(h.file_name())
 }
 
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    /// Im Browser gibt es kein Dateisystem: gewählte Dateien (z. B. Rezepte)
+    /// werden beim Auswählen hier abgelegt und von `read_file` abgeholt.
+    static WEB_FILES: std::cell::RefCell<std::collections::HashMap<String, Vec<u8>>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// Gewählte Datei unter ihrem Namen ablegen (nur Web).
+#[cfg(target_arch = "wasm32")]
+pub fn stash_web_file(name: &str, bytes: Vec<u8>) {
+    persist_web_file(name, &bytes);
+    WEB_FILES.with(|m| {
+        m.borrow_mut().insert(name.to_string(), bytes);
+    });
+}
+
+/// Zuvor abgelegte Datei lesen (nur Web).
+#[cfg(target_arch = "wasm32")]
+pub fn read_web_file(path: &std::path::Path) -> Option<Vec<u8>> {
+    let name = path.file_name()?.to_string_lossy().to_string();
+    WEB_FILES.with(|m| m.borrow().get(&name).cloned())
+}
+
 /// New async file dialog seeded with the last directory a dialog was used in.
 /// All pickers should start from this instead of `rfd::AsyncFileDialog::new()`.
 #[cfg(not(target_arch = "wasm32"))]
@@ -459,7 +387,7 @@ pub mod web_diag {
                 );
                 let _ = body.append_child(&overlay);
                 for (id, label) in [
-                    ("ocs-err-title", crate::t!("OpenCADStudio renderer error — copy this into a bug report:")),
+                    ("ocs-err-title", crate::t!("KINCAD renderer error — copy this into a bug report:")),
                     ("ocs-err-copy", crate::t!("Copy")),
                     ("ocs-err-dismiss", crate::t!("Dismiss")),
                 ] {
@@ -497,4 +425,203 @@ pub mod web_diag {
             let _ = pre.append_child(&line);
         }
     }
+}
+
+// ── Zielordner im Browser (File System Access API) ─────────────────────────
+// Chrome/Edge fragen beim Auswählen selbst nach der Schreiberlaubnis.
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    static OUT_DIR: std::cell::RefCell<Option<wasm_bindgen::JsValue>> =
+        std::cell::RefCell::new(None);
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn js_call(
+    obj: &wasm_bindgen::JsValue,
+    method: &str,
+    args: &[wasm_bindgen::JsValue],
+) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue> {
+    use wasm_bindgen::JsCast;
+    let f: js_sys::Function = js_sys::Reflect::get(obj, &method.into())?.dyn_into()?;
+    let r = match args.len() {
+        0 => f.call0(obj)?,
+        1 => f.call1(obj, &args[0])?,
+        _ => f.call2(obj, &args[0], &args[1])?,
+    };
+    wasm_bindgen_futures::JsFuture::from(js_sys::Promise::resolve(&r)).await
+}
+
+#[cfg(target_arch = "wasm32")]
+fn js_obj(pairs: &[(&str, wasm_bindgen::JsValue)]) -> wasm_bindgen::JsValue {
+    let o = js_sys::Object::new();
+    for (k, v) in pairs {
+        let _ = js_sys::Reflect::set(&o, &(*k).into(), v);
+    }
+    o.into()
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen(module = "/web/store.js")]
+extern "C" {
+    #[wasm_bindgen::prelude::wasm_bindgen(js_name = idbPut)]
+    fn idb_put(key: &str, value: &wasm_bindgen::JsValue) -> js_sys::Promise;
+    #[wasm_bindgen::prelude::wasm_bindgen(js_name = idbGet)]
+    fn idb_get(key: &str) -> js_sys::Promise;
+    #[wasm_bindgen::prelude::wasm_bindgen(js_name = idbDelete)]
+    fn idb_delete(key: &str) -> js_sys::Promise;
+    #[wasm_bindgen::prelude::wasm_bindgen(js_name = dirPermission)]
+    fn dir_permission(handle: &wasm_bindgen::JsValue, ask: bool) -> js_sys::Promise;
+}
+
+/// Gewählte Datei zusätzlich dauerhaft im Browser (IndexedDB) sichern, damit der
+/// Stapel einen Neustart der Seite übersteht.
+#[cfg(target_arch = "wasm32")]
+fn persist_web_file(name: &str, bytes: &[u8]) {
+    let key = format!("file:{name}");
+    let array = js_sys::Uint8Array::from(bytes);
+    wasm_bindgen_futures::spawn_local(async move {
+        let _ = wasm_bindgen_futures::JsFuture::from(idb_put(&key, &array.into())).await;
+    });
+}
+
+/// Eine gesicherte Datei wieder vergessen (aus dem Stapel entfernt).
+#[cfg(target_arch = "wasm32")]
+pub fn forget_web_file(path: &std::path::Path) {
+    let Some(name) = path.file_name().map(|n| n.to_string_lossy().to_string()) else {
+        return;
+    };
+    WEB_FILES.with(|m| m.borrow_mut().remove(&name));
+    wasm_bindgen_futures::spawn_local(async move {
+        let _ = wasm_bindgen_futures::JsFuture::from(idb_delete(&format!("file:{name}"))).await;
+    });
+}
+
+/// Gesicherte Dateien aus dem Browser-Speicher zurückholen (nach einem Neustart).
+#[cfg(target_arch = "wasm32")]
+pub async fn restore_web_files(paths: Vec<std::path::PathBuf>) {
+    for path in paths {
+        let Some(name) = path.file_name().map(|n| n.to_string_lossy().to_string()) else {
+            continue;
+        };
+        if WEB_FILES.with(|m| m.borrow().contains_key(&name)) {
+            continue;
+        }
+        let Ok(value) =
+            wasm_bindgen_futures::JsFuture::from(idb_get(&format!("file:{name}"))).await
+        else {
+            continue;
+        };
+        if value.is_null() || value.is_undefined() {
+            continue;
+        }
+        let bytes = js_sys::Uint8Array::new(&value).to_vec();
+        WEB_FILES.with(|m| {
+            m.borrow_mut().insert(name, bytes);
+        });
+    }
+}
+
+/// Gibt es die Datei noch? Im Browser: liegt sie im Speicher (nach `restore_web_files`).
+pub fn file_available(path: &std::path::Path) -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        read_web_file(path).is_some()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        path.exists()
+    }
+}
+
+/// Kleine Texteinstellung dauerhaft im Browser lesen (localStorage).
+#[cfg(target_arch = "wasm32")]
+pub fn local_get(key: &str) -> Option<String> {
+    web_sys::window()?.local_storage().ok()??.get_item(key).ok()?
+}
+
+/// Kleine Texteinstellung dauerhaft im Browser speichern (localStorage).
+#[cfg(target_arch = "wasm32")]
+pub fn local_set(key: &str, value: &str) {
+    if let Some(Some(storage)) = web_sys::window().and_then(|w| w.local_storage().ok()) {
+        let _ = storage.set_item(key, value);
+    }
+}
+
+/// Den zuletzt gewählten Zielordner aus dem Browser-Speicher zurückholen (ohne
+/// Rückfrage). Gibt den Ordnernamen zurück; `None`, wenn keiner gemerkt ist oder
+/// schon einer aktiv ist. Das Schreibrecht wird erst beim Start nachgefragt.
+#[cfg(target_arch = "wasm32")]
+pub async fn restore_directory() -> Option<String> {
+    if OUT_DIR.with(|d| d.borrow().is_some()) {
+        return None;
+    }
+    let handle = wasm_bindgen_futures::JsFuture::from(idb_get("outdir")).await.ok()?;
+    if handle.is_null() || handle.is_undefined() {
+        return None;
+    }
+    let name = js_sys::Reflect::get(&handle, &"name".into()).ok()?.as_string()?;
+    OUT_DIR.with(|d| *d.borrow_mut() = Some(handle));
+    Some(name)
+}
+
+/// Schreibrecht auf den Zielordner sicherstellen (fragt nach einem Neustart der
+/// Seite einmal neu; nur aus einem Klick heraus aufrufen).
+#[cfg(target_arch = "wasm32")]
+pub async fn ensure_directory_permission() -> bool {
+    let Some(handle) = OUT_DIR.with(|d| d.borrow().clone()) else {
+        return false;
+    };
+    wasm_bindgen_futures::JsFuture::from(dir_permission(&handle, true))
+        .await
+        .ok()
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+}
+
+/// Ordnerwahl des Browsers (mit Schreiberlaubnis). Gibt den Ordnernamen zurück;
+/// `None` bei Abbruch oder wenn der Browser die Funktion nicht kennt.
+#[cfg(target_arch = "wasm32")]
+pub async fn pick_directory() -> Option<String> {
+    let window = web_sys::window()?;
+    let window: wasm_bindgen::JsValue = window.into();
+    let has = js_sys::Reflect::get(&window, &"showDirectoryPicker".into()).ok()?;
+    if !has.is_function() {
+        return None;
+    }
+    let opts = js_obj(&[("mode", "readwrite".into())]);
+    let handle = js_call(&window, "showDirectoryPicker", &[opts]).await.ok()?;
+    let name = js_sys::Reflect::get(&handle, &"name".into()).ok()?.as_string()?;
+    // Fürs nächste Mal merken (das Handle übersteht einen Neustart der Seite).
+    let _ = wasm_bindgen_futures::JsFuture::from(idb_put("outdir", &handle)).await;
+    OUT_DIR.with(|d| *d.borrow_mut() = Some(handle));
+    Some(name)
+}
+
+/// Datei in den gewählten Zielordner schreiben (läuft im Hintergrund). Eine
+/// vorhandene Datei wird nie überschrieben: es wird `name_1`, `name_2` … genommen.
+#[cfg(target_arch = "wasm32")]
+pub fn write_to_picked_dir(name: String, bytes: Vec<u8>) {
+    let Some(dir) = OUT_DIR.with(|d| d.borrow().clone()) else { return };
+    wasm_bindgen_futures::spawn_local(async move {
+        let (stem, ext) = match name.rsplit_once('.') {
+            Some((s, e)) => (s.to_string(), format!(".{e}")),
+            None => (name.clone(), String::new()),
+        };
+        let mut target = name.clone();
+        for i in 1..=999 {
+            if js_call(&dir, "getFileHandle", &[target.as_str().into()]).await.is_err() {
+                break; // existiert noch nicht → frei
+            }
+            target = format!("{stem}_{i}{ext}");
+        }
+        let opts = js_obj(&[("create", true.into())]);
+        let Ok(fh) = js_call(&dir, "getFileHandle", &[target.as_str().into(), opts]).await else {
+            return;
+        };
+        let Ok(w) = js_call(&fh, "createWritable", &[]).await else { return };
+        let array = js_sys::Uint8Array::from(bytes.as_slice());
+        let _ = js_call(&w, "write", &[array.into()]).await;
+        let _ = js_call(&w, "close", &[]).await;
+    });
 }

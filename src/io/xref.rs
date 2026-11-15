@@ -42,6 +42,10 @@ pub struct XrefInfo {
     pub diagnostics: Vec<String>,
     pub read_stats: Option<acadrust::ReadStats>,
     pub source_sha256: Option<String>,
+    /// Objekte aus dem Layout (Papierraum) der referenzierten Zeichnung, die in
+    /// deren Modell übernommen wurden (0, wenn nichts zu holen war oder die
+    /// Option aus ist).
+    pub layout_entities: usize,
 }
 
 /// Scan `doc` for XREF block-records, resolve their paths relative to
@@ -188,6 +192,8 @@ pub fn resolve_xrefs_with_progress(
         ),
     ) in parsed.into_iter().enumerate()
     {
+        // Objekte, die aus dem Layout der Referenz ins Modell geholt wurden.
+        let mut layout_taken = 0usize;
         let (status, diagnostics, read_stats) = match xref_outcome {
             Some(Ok(mut outcome)) => {
                 let recovered = outcome.stats.recovered()
@@ -225,12 +231,14 @@ pub fn resolve_xrefs_with_progress(
                     (XrefStatus::Failed, diagnostics, Some(outcome.stats))
                 } else {
                 ensure_block_entities(doc, &block_name);
-                dropped += merge_xref_into_block(
+                let (xref_dropped, layout_entities) = merge_xref_into_block(
                     doc,
                     &block_name,
                     br_handle,
                     outcome.document,
                 );
+                dropped += xref_dropped;
+                layout_taken = layout_entities;
                     (XrefStatus::Loaded, diagnostics, Some(outcome.stats))
                 }
             }
@@ -247,6 +255,7 @@ pub fn resolve_xrefs_with_progress(
             diagnostics,
             read_stats,
             source_sha256,
+            layout_entities: layout_taken,
         });
         if let Some(progress) = &progress {
             progress(
@@ -259,6 +268,65 @@ pub fn resolve_xrefs_with_progress(
     }
 
     (result, dropped)
+}
+
+/// Löst **eine** Referenz auf (`name`) und mischt ihren Inhalt ein.
+///
+/// Gebraucht direkt nach „Referenz anhängen“: die bereits vorhandenen Referenzen
+/// bleiben unangetastet — [`resolve_xrefs`] würde **alle** erneut auflösen und
+/// ihren Inhalt ein zweites Mal einmischen.
+pub fn resolve_one(doc: &mut CadDocument, base_dir: &Path, name: &str) -> Option<XrefInfo> {
+    let (raw_path, br_handle) = doc
+        .block_records
+        .iter()
+        .find(|br| br.name == name && (br.flags.is_xref || br.flags.is_xref_overlay))
+        .map(|br| (br.xref_path.clone(), br.handle))?;
+    let resolved = resolve_path(&raw_path, base_dir);
+    let outcome = resolved
+        .as_ref()
+        .map(|path| super::load_file_with_progress(path, None));
+    let (status, diagnostics, layout_taken) = match outcome {
+        Some(Ok(mut outcome)) => {
+            let mut diagnostics: Vec<String> = outcome
+                .document
+                .notifications
+                .iter()
+                .map(ToString::to_string)
+                .collect();
+            diagnostics.extend(
+                outcome
+                    .stats
+                    .diagnostics
+                    .iter()
+                    .map(|diagnostic| diagnostic.message.clone()),
+            );
+            let invalid = super::purge_corrupt_entities(&mut outcome.document);
+            if invalid > 0 {
+                diagnostics.push(format!(
+                    "normal read found {invalid} structurally invalid reference records"
+                ));
+                (XrefStatus::Failed, diagnostics, 0)
+            } else {
+                ensure_block_entities(doc, name);
+                let (_dropped, layout_entities) =
+                    merge_xref_into_block(doc, name, br_handle, outcome.document);
+                (XrefStatus::Loaded, diagnostics, layout_entities)
+            }
+        }
+        Some(Err(error)) => (XrefStatus::Failed, vec![error], 0),
+        None => (XrefStatus::NotFound, Vec::new(), 0),
+    };
+    Some(XrefInfo {
+        name: name.to_string(),
+        path: resolved
+            .map(|path| path.to_string_lossy().into_owned())
+            .unwrap_or(raw_path),
+        status,
+        diagnostics,
+        read_stats: None,
+        source_sha256: None,
+        layout_entities: layout_taken,
+    })
 }
 
 /// Try to build an absolute path from a raw xref path string.
@@ -322,14 +390,28 @@ fn ensure_block_entities(doc: &mut CadDocument, block_name: &str) {
 /// — which doesn't know about the xref's layers — and silently falls
 /// back to WHITE / 1 px line weight. AutoCAD's BIND command uses the
 /// same naming scheme.
-/// Returns the number of corrupt entities skipped during the merge.
+///
+/// Plans that keep their content **in the layout** (paper space) would arrive
+/// empty: the entity loop below routes paper-space owners away. Before merging,
+/// that content is therefore folded into the xref's own model space through the
+/// layout's model viewport ([`crate::layout_fuse`]), so model and layout lie on
+/// top of each other — the normal merge then carries it along.
+///
+/// Returns `(corrupt entities skipped, layout objects taken over)`.
 fn merge_xref_into_block(
     doc: &mut CadDocument,
     xref_block_name: &str,
     br_handle: Handle,
-    xref_doc: CadDocument,
-) -> usize {
+    mut xref_doc: CadDocument,
+) -> (usize, usize) {
     let prefix = xref_block_name;
+
+    // ── Layout-Inhalt (Papierraum) ins Modell der Referenz ──────────────
+    let layout_report = if crate::layout_fuse::include_layouts() {
+        crate::layout_fuse::fuse_into_model(&mut xref_doc)
+    } else {
+        crate::layout_fuse::LayoutFuseReport::default()
+    };
 
     // Carry the xref's INSUNITS onto the host BlockRecord. Used at INSERT
     // time so the inserted xref scales to the host's units (INSUNITS).
@@ -526,7 +608,14 @@ fn merge_xref_into_block(
             }
         }
     }
-    dropped
+    (
+        dropped,
+        if layout_report.is_empty() {
+            0
+        } else {
+            layout_report.entities
+        },
+    )
 }
 
 fn is_sentinel_linetype(name: &str) -> bool {

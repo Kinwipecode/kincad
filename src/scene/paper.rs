@@ -157,6 +157,12 @@ impl Scene {
                 .collect();
         }
         let (_, sheet_handle, content_handles) = self.paper_viewport_handles();
+        // In MSPACE wird weiterhin das **Blatt** gezeichnet — mit allen Fenstern.
+        // Das bearbeitete Fenster trägt `active: true`, der Renderer hebt es
+        // damit hervor. So bleiben Umgebung, weisser Hintergrund und der Rahmen
+        // des bearbeiteten Fensters sichtbar (Anwenderwunsch 03.10.2026),
+        // während Auswahl und Zeichnen über die Kamera *dieses* Fensters in
+        // Modellkoordinaten laufen (siehe `Scene::viewport_edit_frame`).
         let mut out: Vec<ViewportInstance> = Vec::new();
         // The full-canvas sheet viewport renders the paper-space entities
         // themselves — the layout's own view, drawn first so the floating
@@ -679,6 +685,13 @@ impl Scene {
             self.annotation_all_visible(),
             false,
         ))
+    }
+
+    /// The camera a floating viewport renders its content with — its own view
+    /// (saved or auto-fitted). Public so the viewer can put MSPACE editing on
+    /// exactly the view the GPU draws, instead of a second, divergent camera.
+    pub fn viewport_camera(&self, vp_handle: Handle) -> Option<view::camera::Camera> {
+        self.camera_for_viewport(vp_handle)
     }
 
     /// Build a Camera oriented and scaled to match a paper-space Viewport entity.

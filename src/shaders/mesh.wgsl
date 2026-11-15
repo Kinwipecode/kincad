@@ -280,7 +280,7 @@ fn shadow_visibility(position: vec3<f32>) -> f32 {
     for (var y = -2; y <= 2; y = y + 1) {
         for (var x = -2; x <= 2; x = x + 1) {
             if abs(x) <= radius && abs(y) <= radius {
-                visibility += textureSampleCompare(
+                visibility += textureSampleCompareLevel(
                     shadow_texture,
                     shadow_sampler,
                     uv + vec2<f32>(f32(x), f32(y)) * texel,
@@ -337,7 +337,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         bitangent = normalize((-dp1 * duv2.x + dp2 * duv1.x) / det);
     }
     if (maps.present1.z != 0u) {
-        let sampled = textureSample(normal_map, normal_sampler, in.uv_normal).xyz * 2.0 - 1.0;
+        let sampled = textureSampleLevel(normal_map, normal_sampler, in.uv_normal, 0.0).xyz * 2.0 - 1.0;
         let mapped = normalize(
             tangent * sampled.x + bitangent * sampled.y + n * sampled.z
         );
@@ -347,7 +347,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         n = normalize(mix(n, mapped, clamp(strength, 0.0, 1.0)));
     } else if (maps.present1.x != 0u) {
         let height = dot(
-            textureSample(bump_map, bump_sampler, in.uv_bump).rgb,
+            textureSampleLevel(bump_map, bump_sampler, in.uv_bump, 0.0).rgb,
             vec3<f32>(0.2126, 0.7152, 0.0722),
         );
         let slope = tangent * dpdx(height) + bitangent * dpdy(height);
@@ -361,7 +361,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 
     var albedo = surface.face_color.rgb;
     if (maps.present0.x != 0u) {
-        let texel = textureSample(diffuse_map, diffuse_sampler, in.uv_diffuse).rgb;
+        let texel = textureSampleLevel(diffuse_map, diffuse_sampler, in.uv_diffuse, 0.0).rgb;
         let blend = clamp(
             maps.blends0.x * map_weight(in.uv_diffuse, maps.tiling0.x),
             0.0,
@@ -388,7 +388,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 
     var specular_color = select(surface.specular.rgb, albedo, surface.flags.x == 1u);
     if (maps.present0.y != 0u) {
-        let texel = textureSample(specular_map, specular_sampler, in.uv_specular).rgb;
+        let texel = textureSampleLevel(specular_map, specular_sampler, in.uv_specular, 0.0).rgb;
         let blend = clamp(
             maps.blends0.y * map_weight(in.uv_specular, maps.tiling0.y),
             0.0,
@@ -488,17 +488,15 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         + albedo * clamp(direct_light, vec3<f32>(0.0), vec3<f32>(2.0))
         + direct_specular;
     if (u.environment_params.x > 0.5) {
-        let diffuse_environment = textureSample(
+        let diffuse_environment = textureSampleLevel(
             environment_texture,
             environment_sampler,
-            environment_uv(n),
-        ).rgb;
+            environment_uv(n), 0.0).rgb;
         let reflection_direction = reflect(-view, n);
-        let reflected_environment = textureSample(
+        let reflected_environment = textureSampleLevel(
             environment_texture,
             environment_sampler,
-            environment_uv(reflection_direction),
-        ).rgb;
+            environment_uv(reflection_direction), 0.0).rgb;
         let indirect_enabled = maps.source_state.z == 0u
             || maps.render_modes.z >= 2u
             || maps.render_modes.w != 0u;
@@ -515,11 +513,10 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
             * max(u.environment_params.w, 0.0);
     }
     if (maps.present0.z != 0u) {
-        let reflected = textureSample(
+        let reflected = textureSampleLevel(
             reflection_map,
             reflection_sampler,
-            in.uv_reflection,
-        ).rgb;
+            in.uv_reflection, 0.0).rgb;
         lit = mix(
             lit,
             reflected,
@@ -534,11 +531,10 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         );
     }
     if (maps.present1.y != 0u) {
-        let transmitted = textureSample(
+        let transmitted = textureSampleLevel(
             refraction_map,
             refraction_sampler,
-            in.uv_refraction,
-        ).rgb;
+            in.uv_refraction, 0.0).rgb;
         lit = mix(
             lit,
             transmitted,
@@ -573,7 +569,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     }
     var material_alpha = surface.face_color.a;
     if (maps.present0.w != 0u) {
-        let opacity = textureSample(opacity_map, opacity_sampler, in.uv_opacity).r;
+        let opacity = textureSampleLevel(opacity_map, opacity_sampler, in.uv_opacity, 0.0).r;
         let blend = clamp(
             maps.blends0.w * map_weight(in.uv_opacity, maps.tiling0.w),
             0.0,

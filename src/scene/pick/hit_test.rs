@@ -178,6 +178,22 @@ fn text_quad_hit_area(
                 max_y = max_y.max(p.y);
             }
             best = best.min((max_x - min_x) * (max_y - min_y));
+        } else {
+            // Also check distance to quad boundary edges (up to 8.0px threshold)
+            for i in 0..4 {
+                let d = dist_point_to_segment(cursor, screen[i], screen[(i + 1) % 4]);
+                if d <= 8.0 {
+                    let (mut min_x, mut min_y, mut max_x, mut max_y) =
+                        (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+                    for p in screen {
+                        min_x = min_x.min(p.x);
+                        min_y = min_y.min(p.y);
+                        max_x = max_x.max(p.x);
+                        max_y = max_y.max(p.y);
+                    }
+                    best = best.min((max_x - min_x) * (max_y - min_y) + d * 10.0);
+                }
+            }
         }
     }
     (best < f32::MAX).then_some(best)
@@ -222,6 +238,11 @@ pub fn click_hit<'a, W: WireSource + ?Sized>(
                 eye,
                 bounds,
             );
+            let d_pt = ((screen.x - cursor.x).powi(2) + (screen.y - cursor.y).powi(2)).sqrt();
+            if d_pt < tolerance && d_pt < best_dist {
+                best_dist = d_pt;
+                best = Some(wire.name.as_str());
+            }
             if let Some(start) = previous {
                 let distance = dist_point_to_segment(cursor, start, screen);
                 if distance < tolerance && distance < best_dist {
@@ -302,6 +323,11 @@ pub fn click_hit<'a, W: WireSource + ?Sized>(
                     eye,
                     bounds,
                 );
+                let d_pt = ((cur.x - cursor.x).powi(2) + (cur.y - cursor.y).powi(2)).sqrt();
+                if d_pt < tol && d_pt < best_dist {
+                    best_dist = d_pt;
+                    best = Some(&wire.name);
+                }
                 if let Some(p0) = prev {
                     let d = dist_point_to_segment(cursor, p0, cur);
                     if d < tol && d < best_dist {
@@ -2231,6 +2257,89 @@ pub fn click_hit_insert_hatch(
         }
     }
     None
+}
+
+// ── Image hit-testing ─────────────────────────────────────────────────────
+
+/// Return the Handle of the first image whose screen-space boundary polygon or
+/// border segment contains/passes near `cursor`.
+pub fn click_hit_image(
+    cursor: Point,
+    images: &HashMap<Handle, crate::scene::model::image_model::ImageModel>,
+    view_rot: Mat4,
+    eye: glam::DVec3,
+    bounds: Rectangle,
+    candidate_handles: Option<&HashSet<Handle>>,
+) -> Option<Handle> {
+    let mut best_dist = f32::MAX;
+    let mut best_handle = None;
+    for (&handle, image) in images {
+        if candidate_handles.is_some_and(|handles| !handles.contains(&handle)) {
+            continue;
+        }
+        let mut screen_corners = [Point::ORIGIN; 4];
+        for (i, (&corner, &corner_low)) in image.corners.iter().zip(image.corners_low.iter()).enumerate() {
+            let world = glam::DVec3::new(
+                corner[0] as f64 + corner_low[0] as f64,
+                corner[1] as f64 + corner_low[1] as f64,
+                corner[2] as f64 + corner_low[2] as f64,
+            );
+            screen_corners[i] = world_to_screen(world, view_rot, eye, bounds);
+        }
+        if point_in_polygon(cursor, &screen_corners) {
+            return Some(handle);
+        }
+        // Also check distance to outline segments in case clicking on border line
+        for i in 0..4 {
+            let p0 = screen_corners[i];
+            let p1 = screen_corners[(i + 1) % 4];
+            let dist = dist_point_to_segment(cursor, p0, p1);
+            if dist <= 12.0 && dist < best_dist {
+                best_dist = dist;
+                best_handle = Some(handle);
+            }
+        }
+    }
+    best_handle
+}
+
+pub fn box_hit_image(
+    corner_a: Point,
+    corner_b: Point,
+    crossing: bool,
+    images: &HashMap<Handle, crate::scene::model::image_model::ImageModel>,
+    view_rot: Mat4,
+    eye: glam::DVec3,
+    bounds: Rectangle,
+) -> Vec<Handle> {
+    let min_x = corner_a.x.min(corner_b.x);
+    let max_x = corner_a.x.max(corner_b.x);
+    let min_y = corner_a.y.min(corner_b.y);
+    let max_y = corner_a.y.max(corner_b.y);
+    let inside = |sp: Point| sp.x >= min_x && sp.x <= max_x && sp.y >= min_y && sp.y <= max_y;
+
+    let mut hits = Vec::new();
+    for (&handle, image) in images {
+        let mut screen_corners = [Point::ORIGIN; 4];
+        for (i, (&corner, &corner_low)) in image.corners.iter().zip(image.corners_low.iter()).enumerate() {
+            let world = glam::DVec3::new(
+                corner[0] as f64 + corner_low[0] as f64,
+                corner[1] as f64 + corner_low[1] as f64,
+                corner[2] as f64 + corner_low[2] as f64,
+            );
+            screen_corners[i] = world_to_screen(world, view_rot, eye, bounds);
+        }
+        if crossing {
+            if screen_corners.iter().copied().any(inside) {
+                hits.push(handle);
+            }
+        } else {
+            if screen_corners.iter().copied().all(inside) {
+                hits.push(handle);
+            }
+        }
+    }
+    hits
 }
 
 fn hatch_contains_screen_point(

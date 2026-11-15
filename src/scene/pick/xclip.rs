@@ -100,6 +100,171 @@ pub fn world_clip_polygon_for_transform(
         .collect()
 }
 
+/// Raw stored boundary as a closed 2D ring: two points describe a rectangle
+/// (opposite corners), three or more an explicit polygon. No transform applied.
+fn boundary_ring_f64(sf: &SpatialFilter) -> Vec<[f64; 2]> {
+    if sf.boundary_points.len() == 2 {
+        let a = sf.boundary_points[0];
+        let b = sf.boundary_points[1];
+        vec![[a.x, a.y], [b.x, a.y], [b.x, b.y], [a.x, b.y]]
+    } else {
+        sf.boundary_points.iter().map(|p| [p.x, p.y]).collect()
+    }
+}
+
+/// Whether a closed ring's bounding box overlaps the world AABB `[min, max]`.
+fn ring_overlaps_aabb(ring: &[[f64; 2]], min: [f64; 2], max: [f64; 2]) -> bool {
+    let (mut x0, mut y0, mut x1, mut y1) = (
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    );
+    for &[x, y] in ring {
+        x0 = x0.min(x);
+        y0 = y0.min(y);
+        x1 = x1.max(x);
+        y1 = y1.max(y);
+    }
+    x1 >= min[0] && x0 <= max[0] && y1 >= min[1] && y0 <= max[1]
+}
+
+/// Build the world-space clip boundary, robust against the two boundary-storage
+/// conventions found in real files.
+///
+/// AutoCAD writes the boundary vertices in WCS together with
+/// `inverse_block_transform` = the *inverse of the insert transform at clip
+/// time*, so the composed `T_insert · M⁻¹` lands them back on the content. But
+/// several other writers (and some export paths) store the vertices already in
+/// WCS with an **identity** `M⁻¹` — the composition then re-applies the insert
+/// placement to already-world vertices, the polygon ends up far away from the
+/// placed content, and [`clip_wires`] removes *everything*: the block
+/// reference draws as an empty window.
+///
+/// Validate the composed polygon against `content` (the world AABB of the
+/// geometry this clip is supposed to frame) and fall back to the raw stored
+/// vertices when the transformed ring misses the content entirely — a clip that
+/// removes 100 % of the content is never what the author meant. `None` keeps
+/// the unvalidated (historic) behaviour.
+pub fn world_clip_polygon_for_content(
+    sf: &SpatialFilter,
+    xform: &Transform,
+    content: Option<([f64; 2], [f64; 2])>,
+) -> Vec<[f64; 2]> {
+    // A stored IDENTITY `inverse_block_transform` means the writer recorded the
+    // boundary vertices in WCS verbatim — an independent reader (LibreDWG +
+    // ezdxf) confirms this for real drawings, e.g. "107.1 Ebene 8 – Parking":
+    // boundary (0.22,0.02)..(1.055,0.51) with an identity matrix, while the
+    // placed content sits exactly there. Composing `T_insert · M⁻¹` would then
+    // re-apply the insert placement and shift the ring off the content (and off
+    // into empty space, where the drawn clip frame has no counterpart in the
+    // drawing at all). Trust the raw ring in that case; the overlap check below
+    // stays as a safety net for every other combination.
+    let identity_inverse = {
+        let m = &sf.inverse_block_transform.m;
+        let mut is_identity = true;
+        for (row, values) in m.iter().enumerate() {
+            for (col, value) in values.iter().enumerate() {
+                let expected = if row == col { 1.0 } else { 0.0 };
+                if (value - expected).abs() > 1.0e-9 {
+                    is_identity = false;
+                }
+            }
+        }
+        is_identity
+    };
+    if identity_inverse {
+        return boundary_ring_f64(sf);
+    }
+    let transformed = world_clip_polygon_for_transform(sf, xform);
+    if let Some((min, max)) = content {
+        if !ring_overlaps_aabb(&transformed, min, max) {
+            let raw = boundary_ring_f64(sf);
+            if ring_overlaps_aabb(&raw, min, max) {
+                return raw;
+            }
+        }
+    }
+    transformed
+}
+
+/// Block-local content bounds of a block reference: the union of its entities'
+/// bounding boxes, in the block's own coordinate system. Used to validate clip
+/// boundaries. `None` when the block carries no enumerable geometry.
+pub fn block_local_content_aabb(
+    doc: &CadDocument,
+    block_name: &str,
+) -> Option<([f64; 2], [f64; 2])> {
+    use acadrust::Entity;
+    let record = doc.block_records.get(block_name)?;
+    let (mut mn, mut mx) = ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]);
+    let mut any = false;
+    for &handle in &record.entity_handles {
+        let Some(entity) = doc.get_entity(handle) else { continue };
+        // Same exclusions as the world-offset centroid scan: definition
+        // sentinels and attribute definitions don't represent drawable content.
+        if matches!(
+            entity,
+            acadrust::EntityType::Block(_)
+                | acadrust::EntityType::BlockEnd(_)
+                | acadrust::EntityType::AttributeDefinition(_)
+        ) {
+            continue;
+        }
+        let bb = entity.as_entity().bounding_box();
+        let (bmin, bmax) = (bb.min, bb.max);
+        if bmin.x == 0.0 && bmin.y == 0.0 && bmax.x == 0.0 && bmax.y == 0.0 {
+            continue;
+        }
+        mn[0] = mn[0].min(bmin.x);
+        mn[1] = mn[1].min(bmin.y);
+        mx[0] = mx[0].max(bmax.x);
+        mx[1] = mx[1].max(bmax.y);
+        any = true;
+    }
+    any.then_some((mn, mx))
+}
+
+/// Map a 2D AABB through a transform (corners of the box, so rotations give the
+/// true world extents).
+pub fn transformed_aabb(aabb: ([f64; 2], [f64; 2]), xform: &Transform) -> ([f64; 2], [f64; 2]) {
+    let ([x0, y0], [x1, y1]) = (aabb.0, aabb.1);
+    let (mut mn, mut mx) = ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]);
+    for (x, y) in [
+        (x0, y0),
+        (x0, y1),
+        (x1, y0),
+        (x1, y1),
+    ] {
+        let w = xform.apply(Vector3::new(x, y, 0.0));
+        mn[0] = mn[0].min(w.x);
+        mn[1] = mn[1].min(w.y);
+        mx[0] = mx[0].max(w.x);
+        mx[1] = mx[1].max(w.y);
+    }
+    (mn, mx)
+}
+
+/// World AABB over every already-expanded wire, from the per-wire cached
+/// `aabb` boxes (cheap; skips unbounded sentinels). `None` when nothing has a
+/// finite box.
+pub fn wires_world_aabb(wires: &[WireModel]) -> Option<([f64; 2], [f64; 2])> {
+    let (mut mn, mut mx) = ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]);
+    let mut any = false;
+    for wire in wires {
+        let [x0, y0, x1, y1] = wire.aabb;
+        if !x0.is_finite() || !y0.is_finite() || !x1.is_finite() || !y1.is_finite() {
+            continue;
+        }
+        mn[0] = mn[0].min(x0 as f64);
+        mn[1] = mn[1].min(y0 as f64);
+        mx[0] = mx[0].max(x1 as f64);
+        mx[1] = mx[1].max(y1 as f64);
+        any = true;
+    }
+    any.then_some((mn, mx))
+}
+
 /// Clip every wire in `wires` to the boundary `poly` (a closed ring in f32 XY,
 /// world_offset-subtracted). Polylines are split into NaN-separated inside
 /// runs; fill triangles are clipped against the polygon; snap / key vertices
@@ -302,6 +467,7 @@ pub fn frame_wire(
         bg_adapt: None,
         point_marker: None,
         taper_widths: Vec::new(),
+        screen_text: None,
         pattern_stations: Vec::new(),
         world_width: 0.0,
         depth_override: None,
@@ -879,6 +1045,114 @@ mod tests {
         let miny = ys.iter().cloned().fold(f64::MAX, f64::min);
         assert!((minx - 639668.0).abs() < 1.0, "minx={minx}");
         assert!((miny - 4516955.0).abs() < 1.0, "miny={miny}");
+    }
+
+    #[test]
+    fn identity_inverse_boundary_falls_back_to_raw_vertices() {
+        use acadrust::types::Vector2;
+        // Real-world case ("107.1 Ebene 8 - Parking"): the writer stored the
+        // clip boundary already in WCS together with an IDENTITY
+        // inverse_block_transform. The composed `T_insert · M⁻¹` then
+        // re-applies the insert placement to already-world vertices, the
+        // polygon lands far from the placed content, and the whole block
+        // reference is clipped away — the sheet showed empty windows.
+        let mut sf = SpatialFilter::new();
+        sf.display_enabled = true;
+        sf.boundary_points = vec![
+            Vector2::new(0.22, 0.51),
+            Vector2::new(0.22, 0.02),
+            Vector2::new(1.055, 0.02),
+            Vector2::new(1.055, 0.51),
+        ];
+        // inverse_block_transform stays identity (SpatialFilter::new).
+        let ins = Insert::new("BLK", Vector3::new(2.4276, -0.0626, 0.0));
+
+        // The placed content the clip is meant to frame.
+        let content = ([0.1, -0.1], [1.2, 0.6]);
+
+        // The historic polygon misses the content entirely …
+        let historic = world_clip_polygon_for_transform(&sf, &ins.get_transform());
+        assert!(
+            !ring_overlaps_aabb(&historic, content.0, content.1),
+            "shifted polygon should miss the content"
+        );
+
+        // … so the validated builder falls back to the raw stored vertices,
+        // which frame the content exactly.
+        let validated = world_clip_polygon_for_content(&sf, &ins.get_transform(), Some(content));
+        assert_eq!(validated.len(), 4);
+        for (point, expected) in validated.iter().zip(sf.boundary_points.iter()) {
+            assert!((point[0] - expected.x).abs() < 1e-9);
+            assert!((point[1] - expected.y).abs() < 1e-9);
+        }
+    }
+
+    #[test]
+    fn content_overlapping_transformed_polygon_keeps_it() {
+        use acadrust::types::{Matrix4, Vector2};
+        // AutoCAD convention: boundary in WCS + inverse of the insert
+        // transform, so the composition cancels onto the content. The
+        // validation must not disturb a polygon that already frames it.
+        let mut sf = SpatialFilter::new();
+        sf.display_enabled = true;
+        sf.boundary_points = vec![Vector2::new(0.0, 0.0), Vector2::new(10.0, 10.0)];
+        sf.inverse_block_transform = Matrix4 {
+            m: [
+                [1.0, 0.0, 0.0, -5.0],
+                [0.0, 1.0, 0.0, -7.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+        };
+        let ins = Insert::new("BLK", Vector3::new(5.0, 7.0, 0.0));
+        let content = ([0.0, 0.0], [10.0, 10.0]);
+        let validated = world_clip_polygon_for_content(&sf, &ins.get_transform(), Some(content));
+        let expected = world_clip_polygon_for_transform(&sf, &ins.get_transform());
+        assert_eq!(validated, expected);
+    }
+
+    #[test]
+    fn none_content_keeps_historic_polygon() {
+        use acadrust::types::{Matrix4, Vector2};
+        // With a NON-identity inverse matrix and no content bounds the composed
+        // polygon is returned unchanged (historic behaviour).
+        let mut sf = SpatialFilter::new();
+        sf.display_enabled = true;
+        sf.boundary_points = vec![Vector2::new(0.0, 0.0), Vector2::new(10.0, 10.0)];
+        sf.inverse_block_transform = Matrix4 {
+            m: [
+                [1.0, 0.0, 0.0, -5.0],
+                [0.0, 1.0, 0.0, -7.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+        };
+        let ins = Insert::new("BLK", Vector3::new(100.0, 100.0, 0.0));
+        let validated = world_clip_polygon_for_content(&sf, &ins.get_transform(), None);
+        assert_eq!(
+            validated,
+            world_clip_polygon_for_transform(&sf, &ins.get_transform())
+        );
+    }
+
+    #[test]
+    fn identity_inverse_returns_the_stored_ring_untouched() {
+        use acadrust::types::Vector2;
+        // Independent readers (LibreDWG + ezdxf) show real drawings storing the
+        // XCLIP boundary in WCS with an IDENTITY inverse_block_transform. The
+        // ring must then be used verbatim — composing the insert transform would
+        // move it off the content and draw a clip frame where the drawing has
+        // nothing. No content bounds are needed for this decision.
+        let mut sf = SpatialFilter::new();
+        sf.display_enabled = true;
+        sf.boundary_points = vec![Vector2::new(0.22, 0.02), Vector2::new(1.055, 0.51)];
+        let ins = Insert::new("BLK", Vector3::new(2.4276, -0.0626, 0.0));
+        let validated = world_clip_polygon_for_content(&sf, &ins.get_transform(), None);
+        assert_eq!(validated.len(), 4);
+        assert!((validated[0][0] - 0.22).abs() < 1e-12);
+        assert!((validated[0][1] - 0.02).abs() < 1e-12);
+        assert!((validated[2][0] - 1.055).abs() < 1e-12);
+        assert!((validated[2][1] - 0.51).abs() < 1e-12);
     }
 
     #[test]

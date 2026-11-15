@@ -166,6 +166,11 @@ fn check_family(
     let pz = xz.y - oz;
 
     let perp_step = fam.perp_step * scale;
+    // Degenerate family (no spacing): the pattern walk below divides by this,
+    // so bail out instead of producing NaN/Inf distances.
+    if perp_step <= 0.0 {
+        return false;
+    }
 
     let perp   = -px * sin_a + pz * cos_a;
     let k      = round(perp / perp_step);
@@ -266,15 +271,26 @@ fn check_family(
     //    project below 2 px, then substitute one solid fill. A single dense
     //    family must neither hide itself nor turn a complex hatch solid.
     var all_families_subpixel = inst.family_count > 0u && u.world_per_pixel > 0.0;
+    var usable_families = 0u;
     if all_families_subpixel {
         for (var i = 0u; i < inst.family_count; i++) {
             let spacing_world =
                 abs(families[inst.family_offset + i].perp_step) * inst.scale;
+            // A degenerate family (spacing zero) can never be resolved, and the
+            // pattern test below divides by that spacing — ignore it instead of
+            // disabling the LOD for the whole hatch.
             if spacing_world <= 0.0 {
-                all_families_subpixel = false;
-            } else if spacing_world / u.world_per_pixel >= 2.0 {
+                continue;
+            }
+            usable_families += 1u;
+            if spacing_world / u.world_per_pixel >= 2.0 {
                 all_families_subpixel = false;
             }
+        }
+        // Every family degenerate => nothing resolvable: substitute one solid
+        // fill rather than aliasing garbage through the pattern test.
+        if usable_families == 0u {
+            all_families_subpixel = true;
         }
     }
     if all_families_subpixel {

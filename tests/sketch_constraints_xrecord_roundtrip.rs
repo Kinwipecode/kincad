@@ -5,11 +5,11 @@
 use acadrust::entities::EntityType;
 use acadrust::objects::{XRecordEntry, XRecordValue};
 use acadrust::types::{Handle, Vector3};
-use OpenCADStudio::scene::named_parameters::DrivingValue;
-use OpenCADStudio::scene::sketch_constraints::{
+use KINCAD::scene::named_parameters::DrivingValue;
+use KINCAD::scene::sketch_constraints::{
     ConstraintKind, SketchConstraintSet, SketchRef, SketchScope,
 };
-use OpenCADStudio::scene::Scene;
+use KINCAD::scene::Scene;
 
 const RECORD_KEY: &str = "OCS_SKETCH_CONSTRAINTS_TEST";
 
@@ -65,9 +65,9 @@ fn roundtrip_through(
         .entries
         .push(XRecordEntry::new(310, XRecordValue::Chunk(bytes)));
 
-    let saved = OpenCADStudio::io::save_to_bytes(&doc, ext, doc.version)
+    let saved = KINCAD::io::save_to_bytes(&doc, ext, doc.version)
         .unwrap_or_else(|e| panic!("save to {ext} bytes: {e}"));
-    let reloaded = OpenCADStudio::io::load_bytes(&format!("roundtrip.{ext}"), saved)
+    let reloaded = KINCAD::io::load_bytes(&format!("roundtrip.{ext}"), saved)
         .unwrap_or_else(|e| panic!("reload {ext} bytes: {e}"));
 
     let record = reloaded

@@ -4,7 +4,11 @@ use super::*;
 impl Scene {
     /// Collect model-space wires projected into paper space for all (or one specific)
     /// user viewports.  `only_vp = Some(h)` restricts output to that viewport.
-    pub(super) fn viewport_content_wires(
+    ///
+    /// `pub(crate)`: the layout export (a flattened copy of the sheet, see
+    /// `crate::layout_export`) reuses exactly this projection so the exported
+    /// geometry lands where the sheet shows it.
+    pub(crate) fn viewport_content_wires(
         &self,
         paper_block: Handle,
         only_vp: Option<Handle>,
@@ -1101,3 +1105,112 @@ fn clip_polyline_to_rect(
     }
     (result, result_stations)
 }
+/// Die Abbildung **Modell → Papier** eines Modell-Viewports — exakt die
+/// Abbildung, mit der [`Scene::viewport_content_wires`] die Modellgeometrie auf
+/// das Blatt projiziert (`Papier = Blattmitte + R(θ)·(Modell − Ziel)·Maßstab`).
+///
+/// Damit kann der Layout-Export echte Objekte (Text, Blöcke, Schraffuren) in
+/// dieselbe Papierlage bringen wie die Liniengeometrie, die er aus der
+/// Projektion übernimmt — beide benutzen dieselben Zahlen, also kann nichts
+/// auseinanderlaufen (auch nicht bei Blattdrehung oder automatisch angepasster
+/// Ansicht).
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ViewportPaperMapping {
+    /// Modellpunkt in der Blattmitte (Ansichtsziel).
+    pub target: glam::DVec3,
+    /// Blattrechte Achse in Modellkoordinaten (Einheitsvektor).
+    pub axis_x: glam::DVec3,
+    /// Blattachse nach oben in Modellkoordinaten (Einheitsvektor).
+    pub axis_y: glam::DVec3,
+    /// Papiereinheiten je Modelleinheit.
+    pub scale: f64,
+    /// Blattmitte in Papierkoordinaten.
+    pub paper_center: glam::DVec3,
+    /// Blattgröße des Viewports (Papierbreite/-höhe, als Betrag).
+    pub paper_size: [f64; 2],
+}
+
+impl ViewportPaperMapping {
+    /// Rechnet einen Modellpunkt in Papierkoordinaten um.
+    pub fn model_to_paper(&self, model: glam::DVec3) -> glam::DVec3 {
+        let d = model - self.target;
+        glam::DVec3::new(
+            self.paper_center.x + d.dot(self.axis_x) * self.scale,
+            self.paper_center.y + d.dot(self.axis_y) * self.scale,
+            self.paper_center.z,
+        )
+    }
+
+    /// Liegt ein Papierpunkt innerhalb des Blattrahmens (`margin` in
+    /// Papiereinheiten, z. B. für Text, dessen Anker knapp außen sitzt)?
+    pub fn paper_inside(&self, paper: glam::DVec3, margin: f64) -> bool {
+        let hw = self.paper_size[0] * 0.5 + margin;
+        let hh = self.paper_size[1] * 0.5 + margin;
+        (paper.x - self.paper_center.x).abs() <= hw
+            && (paper.y - self.paper_center.y).abs() <= hh
+    }
+
+    /// Bildet ein Objekt vom Modell- ins Papier ab (Verschieben, Drehen,
+    /// Skalieren, Verschieben — jeder Schritt eine geprüfte
+    /// Entity-Transformation, wie in `layout_fuse`).
+    pub fn apply_model_to_paper(&self, entity: &mut acadrust::EntityType) {
+        let mut step = |t: EntityTransform| super::view::dispatch::apply_transform(entity, &t);
+        step(EntityTransform::Translate(-self.target));
+        let theta = self.axis_x.y.atan2(self.axis_x.x);
+        if theta.abs() > 1e-12 {
+            step(EntityTransform::Rotate {
+                center: glam::DVec3::ZERO,
+                axis: glam::DVec3::Z,
+                angle_rad: -theta,
+            });
+        }
+        if (self.scale - 1.0).abs() > 1e-12 {
+            step(EntityTransform::Scale {
+                center: glam::DVec3::ZERO,
+                factor: self.scale,
+            });
+        }
+        step(EntityTransform::Translate(self.paper_center));
+    }
+}
+
+impl Scene {
+    /// Die Modell→Papier-Abbildung eines Modell-Viewports (dieselben Zahlen wie
+    /// die Projektion). `None` bei Perspektiv-Viewports: dort ist die Abbildung
+    /// keine Ähnlichkeitstransformation, also gibt es für echte Objekte keine
+    /// passende Objekt-Transformation (die Linienprojektion bleibt trotzdem
+    /// korrekt und wird allein benutzt).
+    pub(crate) fn viewport_paper_mapping(&self, vp_handle: Handle) -> Option<ViewportPaperMapping> {
+        let vp = match self.document.get_entity(vp_handle) {
+            Some(EntityType::Viewport(vp)) => vp,
+            _ => return None,
+        };
+        if vp.status.perspective && vp.lens_length > 1.0 {
+            return None;
+        }
+        let camera = self.camera_for_viewport(vp_handle)?;
+        let axis_x = camera.rotation * glam::Vec3::X;
+        let axis_y = camera.rotation * glam::Vec3::Y;
+        let view_height = (camera.ortho_size() * 2.0) as f64;
+        if !(view_height > 1e-9) {
+            return None;
+        }
+        let scale = vp.height / view_height;
+        if !scale.is_finite() || scale.abs() < 1e-12 {
+            return None;
+        }
+        Some(ViewportPaperMapping {
+            target: glam::DVec3::new(
+                camera.target.x as f64,
+                camera.target.y as f64,
+                camera.target.z as f64,
+            ),
+            axis_x: glam::DVec3::new(axis_x.x as f64, axis_x.y as f64, axis_x.z as f64),
+            axis_y: glam::DVec3::new(axis_y.x as f64, axis_y.y as f64, axis_y.z as f64),
+            scale,
+            paper_center: glam::DVec3::new(vp.center.x, vp.center.y, vp.center.z),
+            paper_size: [vp.width.abs(), vp.height.abs()],
+        })
+    }
+}
+

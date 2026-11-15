@@ -2032,6 +2032,7 @@ pub fn tessellate_table(
                 bg_adapt: None,
                 point_marker: None,
                 taper_widths: Vec::new(),
+                screen_text: None,
                 pattern_stations: Vec::new(),
                 world_width: 0.0,
                 depth_override: None,

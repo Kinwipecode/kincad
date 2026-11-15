@@ -391,6 +391,17 @@ fn block_object_names(
 }
 
 /// Collect block definitions needed by rendered representations.
+impl BlockCache {
+    /// Probe helper (TEMP): number of built definitions.
+    pub fn defn_list_len(&self) -> usize {
+        self.defns.len()
+    }
+    /// Probe helper (TEMP): iterate definitions (name → defn).
+    pub fn defn_list(&self) -> Vec<(String, Arc<BlockDefn>)> {
+        self.defns.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+    }
+}
+
 fn collect_referenced_blocks(doc: &CadDocument, anno_scale: f32) -> Vec<String> {
     let mut seen: HashSet<String> = HashSet::default();
     let mut queue: Vec<String> = Vec::new();
@@ -600,17 +611,25 @@ fn build_nested_ref(
 ) -> NestedRef {
     // Bake the XCLIP boundary (parent-defn-local) so the nested insert keeps
     // its clip when the parent block is expanded — the spatial filter object
-    // isn't reachable at expand time.
+    // isn't reachable at expand time. Validated against the nested block's
+    // placed content: a writer that stored the boundary in WCS with an
+    // identity inverse transform would otherwise clip the reference empty.
     let xform = crate::scene::render_graph::insert_transform_with_policy(
         doc,
         nested_ins,
         anno_scale,
         scale_policy,
     );
-    let clip_poly = crate::scene::pick::xclip::insert_spatial_filter(doc, nested_ins)
-        .map(|filter| {
-            crate::scene::pick::xclip::world_clip_polygon_for_transform(filter, &xform)
-        });
+    let clip_poly = crate::scene::pick::xclip::insert_spatial_filter(doc, nested_ins).map(
+        |filter| {
+            let content = crate::scene::pick::xclip::block_local_content_aabb(
+                doc,
+                &nested_ins.block_name,
+            )
+            .map(|aabb| crate::scene::pick::xclip::transformed_aabb(aabb, &xform));
+            crate::scene::pick::xclip::world_clip_polygon_for_content(filter, &xform, content)
+        },
+    );
     let plot_l0 = crate::scene::view::render::is_effective_layer_zero(
         &nested_ins.common.layer,
     );
@@ -1652,6 +1671,7 @@ impl Batches {
                     bg_adapt,
                     point_marker: b.point_marker,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: b.pattern_stations,
                     world_width: b.world_width,
                     depth_override: b.local_depth,
@@ -2405,6 +2425,7 @@ fn emit_wire(
                     bg_adapt,
                     point_marker: lw.point_marker,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: 0.0,
                     depth_override: local_depth,

@@ -22,6 +22,15 @@ pub enum SnapHint {
     /// arc's two ends would also produce a midpoint snap out on the chord,
     /// which is not on the geometry.
     Endpoint,
+    /// Crossing of two different curves (computed on demand from the drawn
+    /// geometry, never stored in `snap_pts`).
+    Intersection,
+    /// Closest point on any curve under the cursor (computed on demand).
+    Nearest,
+    /// Foot of the perpendicular from the last picked point (computed on demand).
+    Perpendicular,
+    /// Tangent point seen from the last picked point (computed on demand).
+    Tangent,
 }
 
 /// Geometric primitive used by the tangent-snap engine.
@@ -416,6 +425,10 @@ pub struct WireModel {
     /// [`points`], for a polyline whose width VARIES (a taper). Empty = a
     /// constant band of `world_width`. The wire shader reads the two endpoint
     /// widths of each segment and interpolates, so the band tapers smoothly.
+    /// Zoom-independent dimension text: `(anchor, world height)`. The glyph quads on
+    /// this wire are rescaled about `anchor` each frame so the text keeps a fixed
+    /// pixel height; they are left out of the cached base text gather.
+    pub screen_text: Option<([f64; 3], f32)>,
     pub taper_widths: Vec<f32>,
     /// Centreline stations and optional source-piece transform metadata.
     pub pattern_stations: Vec<f32>,
@@ -564,6 +577,7 @@ impl WireModel {
             bg_adapt: None,
             point_marker: None,
             taper_widths: Vec::new(),
+            screen_text: None,
             pattern_stations: Vec::new(),
             world_width: 0.0,
             depth_override: None,
@@ -962,6 +976,7 @@ impl Default for WireModel {
             line_weight_px: 1.0,
             world_width: 0.0,
             taper_widths: Vec::new(),
+            screen_text: None,
             pattern_stations: Vec::new(),
             aci: 0,
             snap_pts: Vec::new(),

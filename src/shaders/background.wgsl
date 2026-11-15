@@ -134,11 +134,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             && (any(uv < vec2<f32>(0.0)) || any(uv > vec2<f32>(1.0))) {
             color = u.viewport_background.rgb;
         } else {
-            color = textureSample(background_texture, background_sampler, uv).rgb;
+            color = textureSampleLevel(background_texture, background_sampler, uv, 0.0).rgb;
         }
     } else if mode == 5u {
-        color = textureSample(background_texture, background_sampler,
-            equirect_uv(in.ndc, u.background_params.w)).rgb;
+        color = textureSampleLevel(background_texture, background_sampler,
+            equirect_uv(in.ndc, u.background_params.w), 0.0).rgb;
     } else if mode == 6u {
         let direction = world_direction(in.ndc);
         let elevation = clamp(direction.z, 0.0, 1.0);

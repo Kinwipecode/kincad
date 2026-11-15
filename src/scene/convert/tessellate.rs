@@ -40,6 +40,15 @@ fn split_ds_xyz(x: f64, y: f64, z: f64) -> ([f32; 3], [f32; 3]) {
     ([xh, yh, zh], [xl, yl, zl])
 }
 
+/// Full screen-pixel width of a PDMODE=0 point marker (the dot).
+///
+/// Kept in pixels, never in world units: the dot then keeps a constant
+/// on-screen size and can never grow into a large world-space cross on a
+/// small sheet. A zero-length segment with this width (negative
+/// `WireModel::world_width` selects the shader's fixed-pixel path) draws as a
+/// round-capped square of the same size.
+const DOT_MARKER_PX: f32 = 2.0;
+
 fn oriented_text_corners(
     verts: &[crate::scene::pipeline::text_gpu::TextVertex],
     origin: [f64; 2],
@@ -89,12 +98,35 @@ fn oriented_mtext_corner_groups(
     let count = crate::entities::text_support::clamp_mtext_column_count(columns.column_count)
         as usize;
     if columns.column_type == 0 || count <= 1 || columns.width <= 0.0 {
-        return vec![oriented_text_corners(
+        let mut corners = oriented_text_corners(
             verts,
             [text.insertion_point.x, text.insertion_point.y],
             rotation,
             pad,
-        )];
+        );
+        // Mit festgelegter Breite (Breitengriff) füllt der Rahmen die ganze Breite,
+        // auch wenn der Text kürzer ist (Anker links oben/mitte/unten links).
+        if text.rectangle_width > 0.0
+            && matches!(
+                text.attachment_point,
+                acadrust::entities::mtext::AttachmentPoint::TopLeft
+                    | acadrust::entities::mtext::AttachmentPoint::MiddleLeft
+                    | acadrust::entities::mtext::AttachmentPoint::BottomLeft
+            )
+        {
+            let (sin_r, cos_r) = rotation.sin_cos();
+            let origin = [text.insertion_point.x, text.insertion_point.y];
+            let right_now = (corners[1][0] - origin[0]) * cos_r + (corners[1][1] - origin[1]) * sin_r;
+            let right_wanted = text.rectangle_width * annotation_scale + pad;
+            if right_wanted > right_now {
+                let d = right_wanted - right_now;
+                for i in [1usize, 2] {
+                    corners[i][0] += d * cos_r;
+                    corners[i][1] += d * sin_r;
+                }
+            }
+        }
+        return vec![corners];
     }
 
     let width = columns.width * annotation_scale;
@@ -365,6 +397,7 @@ fn split_mixed_polyline(
                 bg_adapt: None,
                 point_marker: None,
                 taper_widths,
+                screen_text: None,
                 pattern_stations: Vec::new(),
                 world_width,
                 depth_override: None,
@@ -500,6 +533,7 @@ fn split_mixed_polyline(
             bg_adapt: None,
             point_marker,
             taper_widths,
+            screen_text: None,
             pattern_stations: Vec::new(),
             world_width: line_world_width,
             depth_override: None,
@@ -563,6 +597,7 @@ fn point_cloud_wires(
         bg_adapt: None,
         point_marker: None,
         taper_widths: Vec::new(),
+        screen_text: None,
         pattern_stations: Vec::new(),
         world_width: 0.0,
         depth_override: None,
@@ -818,6 +853,7 @@ pub fn tessellate(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: 0.0,
                     depth_override: None,
@@ -982,6 +1018,7 @@ pub fn tessellate(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: 0.0,
                     depth_override: None,
@@ -1374,6 +1411,7 @@ pub fn tessellate(
                                         bg_adapt: None,
                                         point_marker: None,
                                         taper_widths: Vec::new(),
+                                        screen_text: None,
                                         pattern_stations: Vec::new(),
                                         world_width: 0.0,
                                         depth_override: None,
@@ -1431,6 +1469,7 @@ pub fn tessellate(
                                         bg_adapt: None,
                                         point_marker: None,
                                         taper_widths: Vec::new(),
+                                        screen_text: None,
                                         pattern_stations: Vec::new(),
                                         world_width: 0.0,
                                         depth_override: None,
@@ -1485,6 +1524,7 @@ pub fn tessellate(
                             bg_adapt: None,
                             point_marker: None,
                             taper_widths: Vec::new(),
+                            screen_text: None,
                             pattern_stations: Vec::new(),
                             world_width: 0.0,
                             depth_override: None,
@@ -1520,6 +1560,7 @@ pub fn tessellate(
                         bg_adapt: None,
                         point_marker: None,
                         taper_widths: Vec::new(),
+                        screen_text: None,
                         pattern_stations: Vec::new(),
                         world_width: 0.0,
                         depth_override: None,
@@ -1585,6 +1626,7 @@ pub fn tessellate(
                             bg_adapt: None,
                             point_marker: None,
                             taper_widths: Vec::new(),
+                            screen_text: None,
                             pattern_stations: Vec::new(),
                             world_width: 0.0,
                             depth_override: None,
@@ -1632,6 +1674,7 @@ pub fn tessellate(
                             bg_adapt: None,
                             point_marker: None,
                             taper_widths: Vec::new(),
+                            screen_text: None,
                             pattern_stations: Vec::new(),
                             world_width: 0.0,
                             depth_override: None,
@@ -1676,6 +1719,7 @@ pub fn tessellate(
                         bg_adapt: None,
                         point_marker: None,
                         taper_widths: Vec::new(),
+                        screen_text: None,
                         pattern_stations: Vec::new(),
                         world_width: 0.0,
                         depth_override: None,
@@ -1713,6 +1757,7 @@ pub fn tessellate(
                         bg_adapt: None,
                         point_marker: None,
                         taper_widths: Vec::new(),
+                        screen_text: None,
                         pattern_stations: Vec::new(),
                         world_width: 0.0,
                         depth_override: None,
@@ -1764,16 +1809,25 @@ pub fn tessellate(
                             (position[1] - y as f64) as f32,
                             (position[2] - z as f64) as f32,
                         ];
-                        // A PDMODE=0 point is a single dot. Size its marker to
-                        // ~1 px so it reads as a dot rather than a large
-                        // world-space "+" in small drawings — otherwise the
-                        // dimension def-points on the Defpoints layer litter
-                        // the view with crosses. The tessellation cache keys on
-                        // world-per-pixel, so this re-sizes on zoom and stays a
-                        // constant on-screen size. (#139)
-                        let s = world_per_pixel
-                            .map(|w| (w * 0.75).max(1e-6))
-                            .unwrap_or(0.1);
+                        // A PDMODE=0 point is a single dot. Draw it at a fixed
+                        // *screen* size, never in world units: a world-sized
+                        // marker becomes a large "+" on a small sheet, and the
+                        // zoom-independent resident wire set carries no
+                        // world-per-pixel scale to shrink it with.
+                        //
+                        // The marker used to be a 4-point cross emitted as ONE
+                        // polyline whose two arms were not separated, so every
+                        // consumer joined the arm tips with a segment that
+                        // exists nowhere in the drawing: the fabricated 45
+                        // degree diagonal of length s*sqrt(2) (0.141421 at the
+                        // 0.1 world fallback). POINT entities inside block
+                        // definitions all route through here, which is why the
+                        // artefact appeared all over point-heavy drawings.
+                        //
+                        // The dot is now a zero-length segment with a fixed
+                        // pixel width (DOT_MARKER_PX), so the two strokes are
+                        // represented by their own independent segments and the
+                        // size is zoom-invariant. (#139)
                         let snap_pts = te.snap_pts;
                         let key_vertices: Vec<[f64; 3]> = te
                             .key_vertices
@@ -1784,8 +1838,9 @@ pub fn tessellate(
                             bg_adapt: None,
                             point_marker: None,
                             taper_widths: Vec::new(),
+                            screen_text: None,
                             pattern_stations: Vec::new(),
-                            world_width: 0.0,
+                            world_width: -DOT_MARKER_PX,
                             depth_override: None,
                             display_visible: true,
                             plot_visible: true,
@@ -1798,22 +1853,16 @@ pub fn tessellate(
             dash_align_end: None,
             text_verts: Vec::new(),
                             name,
-                            points: vec![
-                                [x - s, y, z],
-                                [x + s, y, z],
-                                [x, y - s, z],
-                                [x, y + s, z],
-                            ],
-                            // All four cross points share the Point's residual
-                            // (the cross arms are tiny, < 0.1 m, so the low
-                            // component of the centre is also the right one
-                            // for the arm tips at f32 precision).
-                            points_low: vec![[xl, yl, zl]; 4],
+                            // Zero-length segment: the thin-wire path of the
+                            // wire shader expands it with round caps into a
+                            // square of the fixed pixel width, i.e. a dot.
+                            points: vec![[x, y, z], [x, y, z]],
+                            points_low: vec![[xl, yl, zl], [xl, yl, zl]],
                             color,
                             selected,
                             pattern_length: 0.0,
                             pattern: [0.0; 8],
-                            line_weight_px: 1.0,
+                            line_weight_px: DOT_MARKER_PX,
                             snap_pts,
                             tangent_geoms: te.tangent_geoms,
                             aci: 0,
@@ -1943,6 +1992,7 @@ pub fn tessellate(
                             bg_adapt: None,
                             point_marker,
                             taper_widths: Vec::new(),
+                            screen_text: None,
                             pattern_stations: Vec::new(),
                             world_width: polyline_band_width(entity, document.header.fill_mode),
                             depth_override: None,
@@ -1990,6 +2040,7 @@ pub fn tessellate(
                         bg_adapt: None,
                         point_marker: None,
                         taper_widths: Vec::new(),
+                        screen_text: None,
                         pattern_stations: Vec::new(),
                         world_width: 0.0,
                         pick_tris: Vec::new(),
@@ -2027,6 +2078,7 @@ pub fn tessellate(
                         bg_adapt: None,
                         point_marker: None,
                         taper_widths: Vec::new(),
+                        screen_text: None,
                         pattern_stations: Vec::new(),
                         world_width: 0.0,
                         depth_override: None,
@@ -2086,6 +2138,7 @@ pub fn tessellate(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: station_data,
                     world_width: 0.0,
                     depth_override: None,
@@ -2175,6 +2228,7 @@ pub fn tessellate(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: polyline_band_width(entity, document.header.fill_mode),
                     depth_override: None,
@@ -2253,6 +2307,7 @@ pub fn tessellate(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: widths,
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width,
                     depth_override: None,
@@ -2362,6 +2417,7 @@ pub fn tessellate(
         bg_adapt: None,
         point_marker: None,
         taper_widths: Vec::new(),
+        screen_text: None,
         pattern_stations: Vec::new(),
         world_width: 0.0,
         depth_override: None,
@@ -3229,5 +3285,62 @@ mod tests {
         assert_eq!(inst.start_width, 25.0);
         // params.w (end_width) is at end_angle (physical start, 5.0)
         assert_eq!(inst.params[3], 5.0);
+    }
+
+    /// A PDMODE=0 POINT is a single dot. It must tessellate to a marker whose
+    /// strokes are independent — no segment may join two marker strokes.
+    ///
+    /// Regression: the marker used to be a 4-point cross emitted as ONE
+    /// polyline. The two arms were never separated, so every consumer joined
+    /// the arm tips with a fabricated segment of length s*sqrt(2) — exactly the
+    /// 0.141421 diagonal that appeared all over point-heavy drawings (POINT
+    /// entities inside blocks, PDMODE=0, PDSIZE=0, no world-per-pixel scale in
+    /// the zoom-independent resident wire set, so s fell back to 0.1 world
+    /// units and the artefact became clearly visible).
+    #[test]
+    fn pdmode_zero_point_dot_has_no_synthetic_segment() {
+        let mut doc = acadrust::CadDocument::new();
+        doc.header.point_display_mode = 0;
+        doc.header.point_display_size = 0.0;
+
+        let mut point = acadrust::entities::Point::default();
+        point.location = acadrust::types::Vector3::new(0.759960, 0.341339, 0.0);
+
+        let wires = tessellate(
+            &doc,
+            Handle::new(0x3B0),
+            &EntityType::Point(point),
+            false,
+            [1.0, 1.0, 1.0, 1.0],
+            0.0,
+            [0.0; 8],
+            1.0,
+            1.0,
+            None,
+            // No world-per-pixel scale: the resident-set path where the old
+            // world-space cross fell back to a 0.1 half size.
+            None,
+            [0.0, 0.0, 0.0, 1.0],
+            false,
+        );
+
+        assert_eq!(wires.len(), 1, "a PDMODE=0 point is one dot marker");
+        let dot = &wires[0];
+        assert_eq!(dot.points.len(), 2, "the dot is a zero-length marker");
+        for pair in dot.points.windows(2) {
+            let (a, b) = (pair[0], pair[1]);
+            if !a[0].is_finite() || !b[0].is_finite() {
+                continue;
+            }
+            let len = ((b[0] as f64) - (a[0] as f64)).hypot((b[1] as f64) - (a[1] as f64));
+            assert!(
+                len < 1.0e-6,
+                "a PDMODE=0 dot must not emit a {len} long joining segment"
+            );
+        }
+        assert!(
+            dot.world_width < 0.0,
+            "the dot must be sized in pixels, not in world units"
+        );
     }
 }

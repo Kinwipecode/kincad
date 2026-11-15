@@ -149,7 +149,7 @@ impl Scene {
             }
             self.poison_undo_recording();
         }
-        crate::modules::draw::modify::explode::invalidate_dim_block(&mut self.document, handle);
+        crate::entities::explode::invalidate_dim_block(&mut self.document, handle);
     }
 
     // ── Modify (transform / copy) ─────────────────────────────────────────
@@ -160,7 +160,7 @@ impl Scene {
         let handles: Vec<Handle> = handles
             .iter()
             .copied()
-            .filter(|&h| !self.is_layer_locked(h))
+            .filter(|&h| !self.is_layer_locked(h) && !self.is_xref_locked(h))
             .collect();
         let handles = &handles[..];
         // Preserve readable text orientation when MIRRTEXT is disabled.
@@ -476,6 +476,28 @@ impl Scene {
         }
     }
 
+    /// Alle Layouts des Dokuments ins Modell übernehmen („die beiden
+    /// übereinander im Modell"): der Papierinhalt wird über den Modell-Viewport
+    /// des jeweiligen Layouts ausgerichtet und als normale Objekte in den
+    /// Modellbereich kopiert — also sofort sichtbar und undo-fähig.
+    ///
+    /// Erwartet den Modellbereich als aktiven Bereich (der Aufrufer schaltet um);
+    /// auf einem Layout-Tab würden die Kopien wieder im Papierraum landen.
+    pub fn fuse_layouts_into_model(&mut self) -> crate::layout_fuse::LayoutFuseReport {
+        if self.current_layout != "Model" || self.block_edit_block.is_some() {
+            let mut report = crate::layout_fuse::LayoutFuseReport::default();
+            report
+                .unaligned
+                .push(self.current_layout.clone());
+            return report;
+        }
+        let (entities, report) = crate::layout_fuse::collect_layout_entities(&self.document);
+        for entity in entities {
+            self.add_entity_clone(entity);
+        }
+        report
+    }
+
     /// Add a clone to the active space with fresh top-level and inline handles.
     /// Source owner handles are document-local and must not cross drawings.
     /// (#129, #934)
@@ -588,10 +610,11 @@ impl Scene {
             })
             .collect();
 
-        // Objects on a locked layer can be selected but not copied.
+        // Objects on a locked layer (or in a locked reference) can be selected but
+        // not copied.
         let clones: Vec<(Handle, EntityType, Vec<Handle>)> = copy_handles
             .iter()
-            .filter(|&&h| !self.is_layer_locked(h))
+            .filter(|&&h| !self.is_layer_locked(h) && !self.is_xref_locked(h))
             .filter_map(|&h| {
                 let entity = self.document.get_entity(h)?.clone();
 
@@ -1383,8 +1406,8 @@ impl Scene {
     }
 
     pub fn apply_grip(&mut self, handle: Handle, grip_id: usize, apply: GripApply) {
-        // Objects on a locked layer can't be grip-edited.
-        if self.is_layer_locked(handle) {
+        // Objects on a locked layer (or in a locked reference) can't be grip-edited.
+        if self.is_layer_locked(handle) || self.is_xref_locked(handle) {
             return;
         }
         if self.apply_solid_history_grip(handle, grip_id, apply.clone()) {
@@ -1537,5 +1560,70 @@ impl Scene {
         if !hatch_changes.is_empty() {
             self.bump_entities(&hatch_changes);
         }
+    }
+}
+
+// ── Zwischenablage (Strg+C / Strg+X / Strg+V) ───────────────────────────────
+
+impl Scene {
+    /// Kopien der Objekte `handles` für die Zwischenablage. Verknüpfungen der
+    /// Flächen (Flächentext ↔ Figuren, Summentext ↔ Bezugslinien) werden nicht
+    /// mitgenommen: die Kopie ist ein gewöhnliches Objekt.
+    pub fn clipboard_snapshot(&self, handles: &[Handle]) -> Vec<EntityType> {
+        handles
+            .iter()
+            .filter_map(|h| self.document.get_entity(*h).cloned())
+            .filter(|e| !matches!(e, EntityType::Block(_) | EntityType::BlockEnd(_)))
+            .map(|mut e| {
+                let common = e.common_mut();
+                let mut rebuilt = acadrust::xdata::ExtendedData::new();
+                for r in common.extended_data.records() {
+                    if r.application_name != crate::scene::flaechen::AREA_APP
+                        && r.application_name != crate::scene::flaechen::AREA_SUM_APP
+                    {
+                        rebuilt.add_record(r.clone());
+                    }
+                }
+                rebuilt.raw_dwg_eed = common.extended_data.raw_dwg_eed.clone();
+                common.extended_data = rebuilt;
+                e
+            })
+            .collect()
+    }
+
+    /// Objekte aus der Zwischenablage an ihren **ursprünglichen Koordinaten**
+    /// einfügen (Bezugspunkt ist der Nullpunkt 0,0). Rückgabe: neue Handles und
+    /// Anzahl der übersprungenen Objekte (Block fehlt in dieser Zeichnung).
+    pub fn paste_entities(&mut self, entities: &[EntityType]) -> (Vec<Handle>, usize) {
+        let mut handles = Vec::new();
+        let mut skipped = 0usize;
+        for source in entities {
+            let missing_block = match source {
+                EntityType::Insert(ins) => self.document.block_records.get(&ins.block_name).is_none(),
+                EntityType::Dimension(d) => {
+                    let name = d.base().block_name.clone();
+                    !name.trim().is_empty() && self.document.block_records.get(&name).is_none()
+                }
+                _ => false,
+            };
+            if missing_block {
+                skipped += 1;
+                continue;
+            }
+            let mut entity = source.clone();
+            Self::reset_clone_subhandles(&mut self.document, &mut entity);
+            let common = entity.common_mut();
+            common.handle = Handle::NULL;
+            common.xdictionary_handle = None;
+            let layer = common.layer.clone();
+            self.ensure_layer(&layer);
+            let handle = self.add_entity(entity);
+            if handle.is_null() {
+                skipped += 1;
+            } else {
+                handles.push(handle);
+            }
+        }
+        (handles, skipped)
     }
 }

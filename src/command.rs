@@ -264,7 +264,7 @@ pub enum TangentObject {
 /// Every input source — the GUI command line, the headless automation feeder,
 /// dynamic input, the plugin API, and the viewport (clicks / picks / selection
 /// / tangent) — translates its raw input into one of these and routes it
-/// through `OpenCADStudio::feed_command`, so a single place drives the command
+/// through `KINCAD::feed_command`, so a single place drives the command
 /// regardless of where the step came from.
 ///
 /// Variants are wired up incrementally as each source is migrated onto
@@ -1540,21 +1540,10 @@ pub enum CmdResult {
     JoinEntities(Vec<Handle>),
     /// Join candidates into an explicitly selected source.
     JoinToSource { source: Handle, handles: Vec<Handle> },
-    /// Apply a polyline-edit operation to one entity; keep command active.
-    PeditOp {
-        handle: Handle,
-        op: crate::modules::draw::modify::pedit::PeditOp,
-    },
     /// Place Point entities at N equal intervals along the entity.
     DivideEntity { handle: Handle, n: usize, marker: Option<CurveMarker> },
     /// Place Point entities at `segment_length` intervals along the entity.
     MeasureEntity { handle: Handle, segment_length: f64, pick_point: DVec3, marker: Option<CurveMarker> },
-    /// Extend/trim a Line or Arc by the given mode; end command.
-    LengthenEntity {
-        handle: Handle,
-        pick_pt: DVec3,
-        mode: crate::modules::draw::modify::lengthen::LenMode,
-    },
     /// Align selected entities: translate to dst1, rotate by angle_rad, optional scale.
     AlignSelected {
         handles: Vec<Handle>,
@@ -2566,39 +2555,6 @@ pub fn all_registered_command_names() -> Vec<&'static str> {
         .collect()
 }
 
-#[cfg(test)]
-mod constraint_registry_tests {
-    use super::*;
-
-    /// Ensures every constraint command remains discoverable by autocomplete
-    /// and command listings.
-    #[test]
-    fn every_constraint_command_is_in_the_autocomplete_registry() {
-        let names = all_registered_command_names();
-        for id in [
-            "CCONSTRAINT",
-            "EDCONSTRAINT",
-            "CPCONSTRAINT",
-            "MPCONSTRAINT",
-            "OCCONSTRAINT",
-            "HCONSTRAINT",
-            "VCONSTRAINT",
-            "PCONSTRAINT",
-            "QCONSTRAINT",
-            "ECONSTRAINT",
-            "TCONSTRAINT",
-            "NCONSTRAINT",
-            "NRCONSTRAINT",
-            "LCONSTRAINT",
-            "FXCONSTRAINT",
-            "SYCONSTRAINT",
-            "DCONSTRAINT",
-            "ACONSTRAINT",
-        ] {
-            assert!(names.contains(&id), "{id} is missing from the command registry");
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

@@ -620,7 +620,7 @@ impl Scene {
             }
         }
         // Restore from the standard *Active VPORT entry. (Earlier builds also
-        // wrote an app-specific "OpenCADStudio_Camera_Model" View record and
+        // wrote an app-specific "KINCAD_Camera_Model" View record and
         // preferred it here — that polluted the file for other CAD programs and
         // is no longer written or read; the view round-trips fine via VPORT.)
         let vp = match self.document.vports.iter().find(|v| is_active_vport_name(&v.name)) {
@@ -1064,7 +1064,7 @@ impl Scene {
     ///
     /// The sheet viewport entity is the authoritative paper-space view (it
     /// round-trips through both the DXF and DWG writers). An older
-    /// `OpenCADStudio_Camera_<layout>` named View is honoured only as a
+    /// `KINCAD_Camera_<layout>` named View is honoured only as a
     /// backward-compatible fallback for files saved under the previous scheme.
     fn apply_sheet_viewport_camera(&mut self) -> bool {
         // The Layout object already owns the authoritative sheet-viewport
@@ -1081,7 +1081,7 @@ impl Scene {
             Some(v) if v.view_height.abs() >= 1e-9 => v,
             _ => {
                 // Back-compat: files OCS saved with the named-View side-channel.
-                let view_name = format!("OpenCADStudio_Camera_{}", self.current_layout);
+                let view_name = format!("KINCAD_Camera_{}", self.current_layout);
                 let fallback =
                     self.document.views.iter().find(|v| v.name == view_name).cloned();
                 if let Some(view) = fallback {
@@ -1395,6 +1395,21 @@ impl Scene {
                     })
             })
             .map(|(_, set)| (set.world_aabb, set.z_aabb))
+            // Solids placed through an INSERT live in the block, not in
+            // `meshes`; without them a drawing whose only geometry is such a
+            // block has nothing to fit.
+            .chain(
+                self.instanced_block_meshes(
+                    layout_block,
+                    None,
+                    scale,
+                    self.annotation_all_visible(),
+                    None,
+                    None,
+                )
+                .iter()
+                .map(|set| (set.world_aabb, set.z_aabb)),
+            )
             .filter(|(xy, z)| {
                 xy[0].is_finite()
                     && xy[1].is_finite()
@@ -1567,3 +1582,414 @@ impl Scene {
 
     pub fn update(&mut self, _dt: Duration) {}
 }
+
+// ── ZOOM Alles: die Mehrheit der Zeichnung statt der äußersten Extremwerte ───
+
+/// One entity's contribution to the question "where is the drawing?" — its
+/// rendered bounding box reduced to centre and extent.
+///
+/// Every entity counts **once**, no matter how many vertices it has, so a
+/// single dense object far away cannot outvote the rest of the drawing.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct BulkSample {
+    pub center: glam::DVec2,
+    pub min: glam::DVec3,
+    pub max: glam::DVec3,
+}
+
+/// How far a sample may sit from the median centre and still count as "bulk",
+/// in multiples of the scaled median absolute deviation (1.4826·MAD ≈ σ).
+pub(crate) const BULK_SIGMA: f64 = 4.0;
+
+/// Robust bounding box of the **bulk** of `samples`.
+///
+/// * The median centre of all samples is the anchor — a median ignores a
+///   minority of far-away values, a mean does not.
+/// * A sample belongs to the bulk while its centre stays within
+///   `sigma · 1.4826 · MAD` of that median on both axes.
+/// * At least 5 % of the overall span is always tolerated, so a degenerate MAD
+///   (e.g. half the drawing stacked on one line) cannot throw away real parts.
+///
+/// Returns the union of the extents of everything that stayed, plus the number
+/// of kept samples so the caller can refuse to zoom into almost nothing.
+pub(crate) fn bulk_bounds(
+    samples: &[BulkSample],
+    sigma: f64,
+) -> Option<((glam::DVec3, glam::DVec3), usize)> {
+    if samples.is_empty() {
+        return None;
+    }
+    fn median(values: &mut [f64]) -> f64 {
+        values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        values[values.len() / 2]
+    }
+
+    let mut xs: Vec<f64> = samples.iter().map(|s| s.center.x).collect();
+    let mut ys: Vec<f64> = samples.iter().map(|s| s.center.y).collect();
+    let mx = median(&mut xs);
+    let my = median(&mut ys);
+    let mut dev_x: Vec<f64> = samples.iter().map(|s| (s.center.x - mx).abs()).collect();
+    let mut dev_y: Vec<f64> = samples.iter().map(|s| (s.center.y - my).abs()).collect();
+    let mad_x = median(&mut dev_x);
+    let mad_y = median(&mut dev_y);
+
+    let mut all_min = glam::DVec3::splat(f64::INFINITY);
+    let mut all_max = glam::DVec3::splat(f64::NEG_INFINITY);
+    for sample in samples {
+        all_min = all_min.min(sample.min);
+        all_max = all_max.max(sample.max);
+    }
+    let span = all_max - all_min;
+    let tolerance = |mad: f64, span: f64| (1.4826 * mad).max(0.05 * span).max(1e-12);
+    let tol_x = tolerance(mad_x, span.x);
+    let tol_y = tolerance(mad_y, span.y);
+
+    let mut counted: Vec<bool> = vec![false; samples.len()];
+    let mut min = glam::DVec3::splat(f64::INFINITY);
+    let mut max = glam::DVec3::splat(f64::NEG_INFINITY);
+    for (index, sample) in samples.iter().enumerate() {
+        if (sample.center.x - mx).abs() <= sigma * tol_x
+            && (sample.center.y - my).abs() <= sigma * tol_y
+        {
+            min = min.min(sample.min);
+            max = max.max(sample.max);
+            counted[index] = true;
+        }
+    }
+    let mut kept = counted.iter().filter(|counted| **counted).count();
+    if kept == 0 || !min.is_finite() || !max.is_finite() {
+        return None;
+    }
+
+    // ── Zweiter Durchgang: Nachbarn zurückholen ──────────────────────────────
+    // Die Mittelpunkt-Prüfung kann ein **großes Objekt, das die Mehrheit
+    // umschließt** (Rahmen, Grundstücksgrenze, Plankasten), versehentlich
+    // aussortieren, weil sein Mittelpunkt weit von den vielen kleinen Teilen
+    // liegt. Es wird deshalb wieder aufgenommen, ebenso ein zweiter Flügel,
+    // dessen Lücke klein ist gegenüber dem Rumpf selbst — ein wirklich
+    // verirrtes Element bleibt außen vor, weil seine Lücke viel größer ist
+    // (die Lücke muss ≤ 25 % der Rumpf-Diagonale sein).
+    for _ in 0..samples.len().max(1) {
+        let margin = 0.25 * (max - min).length().max(1e-9);
+        let mut grew = false;
+        for (index, sample) in samples.iter().enumerate() {
+            let gap_x = (min.x - sample.max.x).max(sample.min.x - max.x).max(0.0);
+            let gap_y = (min.y - sample.max.y).max(sample.min.y - max.y).max(0.0);
+            if (gap_x * gap_x + gap_y * gap_y).sqrt() > margin {
+                continue;
+            }
+            let new_min = min.min(sample.min);
+            let new_max = max.max(sample.max);
+            if new_min != min || new_max != max {
+                min = new_min;
+                max = new_max;
+                grew = true;
+            }
+            if !counted[index] {
+                counted[index] = true;
+                kept += 1;
+            }
+        }
+        if !grew {
+            break;
+        }
+    }
+
+    Some(((min, max), kept))
+}
+
+impl Scene {
+    /// Per-entity rendered bounds of model space, one sample per entity.
+    /// Empty when the drawing has no renderable geometry yet.
+    ///
+    /// Sampling follows `model_space_extents`: it walks the resident wire set
+    /// (so hidden/frozen geometry never votes) and groups the wires by the
+    /// entity handle encoded in their name. Entities that carry no wire
+    /// geometry at all — pure TEXT runs, for example, which the text pipeline
+    /// draws — simply do not vote; that matches how the viewer's extents have
+    /// always been computed.
+    fn bulk_samples(&self) -> Vec<BulkSample> {
+        let model_block = self.model_space_block_handle();
+        if model_block.is_null() {
+            return Vec::new();
+        }
+        let scale = crate::scene::annotative::scale_handle_by_name(
+            &self.document,
+            &self.document.header.current_annotation_scale,
+        );
+        let wires = self.resident_wires_for(
+            model_block,
+            Some(self.annotation_scale),
+            scale,
+            None,
+            None,
+        );
+        let empty = BulkSample {
+            center: glam::DVec2::ZERO,
+            min: glam::DVec3::splat(f64::INFINITY),
+            max: glam::DVec3::splat(f64::NEG_INFINITY),
+        };
+        let mut groups: std::collections::HashMap<Handle, BulkSample> =
+            std::collections::HashMap::new();
+        for wire in wires.iter() {
+            let Some(handle) = Self::handle_from_wire_name(&wire.name) else {
+                continue;
+            };
+            let entry = groups.entry(handle).or_insert(empty);
+            for &[x, y, z] in &wire.key_vertices {
+                if !(x as f32).is_finite() || !(y as f32).is_finite() || !(z as f32).is_finite() {
+                    continue;
+                }
+                let point = glam::DVec3::new(x, y, z);
+                entry.min = entry.min.min(point);
+                entry.max = entry.max.max(point);
+            }
+            // Entities whose tessellation has no "key" vertices (text runs, for
+            // example) would otherwise not vote at all — their rendered points
+            // are just as good for a bounding box.
+            for (index, &[x, y, z]) in wire.points.iter().enumerate() {
+                let low = wire.points_low.get(index).copied().unwrap_or([0.0; 3]);
+                let point = glam::DVec3::new(
+                    x as f64 + low[0] as f64,
+                    y as f64 + low[1] as f64,
+                    z as f64 + low[2] as f64,
+                );
+                if !point.is_finite() {
+                    continue;
+                }
+                entry.min = entry.min.min(point);
+                entry.max = entry.max.max(point);
+            }
+        }
+        for (&handle, set) in &self.meshes {
+            let Some(entity) = self.document.get_entity(handle) else {
+                continue;
+            };
+            if !self.mesh_entity_visible(handle)
+                || !self.belongs_to_visible_block(handle, entity.common().owner_handle, model_block)
+            {
+                continue;
+            }
+            let [ax, ay, bx, by] = set.world_aabb;
+            let [az, bz] = set.z_aabb;
+            let min = glam::DVec3::new(ax.min(bx) as f64, ay.min(by) as f64, az.min(bz) as f64);
+            let max = glam::DVec3::new(ax.max(bx) as f64, ay.max(by) as f64, az.max(bz) as f64);
+            if !min.is_finite() || !max.is_finite() {
+                continue;
+            }
+            let entry = groups.entry(handle).or_insert(empty);
+            entry.min = entry.min.min(min);
+            entry.max = entry.max.max(max);
+        }
+
+        for set in self.instanced_block_meshes(
+            model_block,
+            None,
+            scale,
+            self.annotation_all_visible(),
+            None,
+            None,
+        ) {
+            let [ax, ay, bx, by] = set.world_aabb;
+            let [az, bz] = set.z_aabb;
+            let min = glam::DVec3::new(ax.min(bx) as f64, ay.min(by) as f64, az.min(bz) as f64);
+            let max = glam::DVec3::new(ax.max(bx) as f64, ay.max(by) as f64, az.max(bz) as f64);
+            if !min.is_finite() || !max.is_finite() {
+                continue;
+            }
+            let entry = groups
+                .entry(set.instance_handle.unwrap_or_default())
+                .or_insert(empty);
+            entry.min = entry.min.min(min);
+            entry.max = entry.max.max(max);
+        }
+
+        let mut samples: Vec<BulkSample> = Vec::with_capacity(groups.len());
+        for (_, mut sample) in groups {
+            if !(sample.min.x <= sample.max.x) || !(sample.min.y <= sample.max.y) {
+                continue;
+            }
+            sample.center = glam::DVec2::new(
+                (sample.min.x + sample.max.x) * 0.5,
+                (sample.min.y + sample.max.y) * 0.5,
+            );
+            samples.push(sample);
+        }
+        samples
+    }
+
+    /// Bounding box of the drawing bulk (see [`bulk_bounds`]); `None` when the
+    /// drawing has no renderable model-space geometry.
+    pub fn bulk_extents(&self) -> Option<(glam::Vec3, glam::Vec3)> {
+        let samples = self.bulk_samples();
+        let ((min, max), kept) = bulk_bounds(&samples, BULK_SIGMA)?;
+        if kept == 0 {
+            return None;
+        }
+        Some((
+            glam::Vec3::new(min.x as f32, min.y as f32, min.z as f32),
+            glam::Vec3::new(max.x as f32, max.y as f32, max.z as f32),
+        ))
+    }
+
+    /// ZOOM Alle Elemente: exakt die Ausdehnung aller Elemente, ohne jede
+    /// Ausreißer-Aussortierung (anders als `fit_all`, dessen Quartil-Filter bei
+    /// sehr dicht gepackten Teilen den Rest der Zeichnung wegwirft).
+    pub fn fit_elements(&mut self) {
+        if self.active_viewport.is_some() || self.current_layout != "Model" {
+            self.fit_all();
+            return;
+        }
+        let Some((mut min, mut max)) = self.model_space_extents() else {
+            self.fit_all();
+            return;
+        };
+        if (max - min).abs().max_element() < 1e-6 {
+            min -= glam::Vec3::splat(1.0);
+            max += glam::Vec3::splat(1.0);
+        }
+        let aspect = self.active_camera_aspect();
+        self.camera.borrow_mut().fit_to_bounds(min, max, aspect);
+        self.projection_bounds_epoch.set(self.geometry_epoch);
+        self.camera_generation += 1;
+    }
+
+    /// ZOOM Alles: frame the **bulk** of the drawing.
+    ///
+    /// [`Scene::fit_all`] frames every object; a single element sitting far away
+    /// from the rest then shrinks the visible drawing to a dot. This variant
+    /// finds where the majority of the objects are and frames that, so ZOOM
+    /// Alles always shows the drawing itself. Returns `false` (after falling
+    /// back to `fit_all`) when no bulk could be determined.
+    pub fn fit_majority(&mut self) -> bool {
+        let Some((min, max)) = self.bulk_extents() else {
+            self.fit_all();
+            return false;
+        };
+        if self.active_viewport.is_some() {
+            self.fit_active_viewport_to_bounds(min, max);
+            self.camera_generation += 1;
+            return true;
+        }
+        if self.current_layout != "Model" {
+            self.fit_paper_space_extents();
+            self.camera_generation += 1;
+            return true;
+        }
+        let (mut lo, mut hi) = (min, max);
+        if (hi - lo).abs().max_element() < 1e-6 {
+            lo -= glam::Vec3::splat(1.0);
+            hi += glam::Vec3::splat(1.0);
+        }
+        let aspect = self.active_camera_aspect();
+        self.camera.borrow_mut().fit_to_bounds(lo, hi, aspect);
+        self.projection_bounds_epoch.set(self.geometry_epoch);
+        self.camera_generation += 1;
+        true
+    }
+}
+
+
+#[cfg(test)]
+mod bulk_tests {
+    use super::*;
+
+    fn sample(cx: f64, cy: f64, half: f64) -> BulkSample {
+        BulkSample {
+            center: glam::DVec2::new(cx, cy),
+            min: glam::DVec3::new(cx - half, cy - half, 0.0),
+            max: glam::DVec3::new(cx + half, cy + half, 0.0),
+        }
+    }
+
+    #[test]
+    fn a_single_stray_object_is_ignored() {
+        // The drawing: nine entities between 0 and 10, one at x = 1000.
+        let mut samples: Vec<BulkSample> = (0..9)
+            .map(|i| sample(i as f64, (i % 3) as f64, 0.4))
+            .collect();
+        samples.push(sample(1000.0, 0.0, 5.0));
+
+        let ((min, max), kept) = bulk_bounds(&samples, BULK_SIGMA).expect("bulk");
+        assert_eq!(kept, 9, "the stray object must not be part of the bulk: {min:?} {max:?}");
+        assert!(max.x < 20.0, "the view must stay on the drawing: {max:?}");
+        assert!(min.x >= -1.0, "{min:?}");
+    }
+
+    #[test]
+    fn two_neighbouring_groups_both_count() {
+        // Two wings 30 units apart, five entities each — both are the drawing.
+        let mut samples: Vec<BulkSample> = (0..5).map(|i| sample(i as f64, 0.0, 0.5)).collect();
+        samples.extend((0..5).map(|i| sample(30.0 + i as f64, 2.0, 0.5)));
+        let ((min, max), kept) = bulk_bounds(&samples, BULK_SIGMA).expect("bulk");
+        assert_eq!(kept, 10);
+        assert!(min.x < 0.5 && max.x > 34.0, "{min:?} … {max:?}");
+    }
+
+    #[test]
+    fn empty_and_stack_cases_are_handled() {
+        assert!(bulk_bounds(&[], BULK_SIGMA).is_none());
+        // A single entity is always the bulk (the tolerance never collapses).
+        let ((min, max), kept) = bulk_bounds(&[sample(5.0, 5.0, 1.0)], BULK_SIGMA).expect("bulk");
+        assert_eq!(kept, 1);
+        assert!(min.x <= 4.0 && max.x >= 6.0);
+        // Stacked on one line: the 5 % span floor keeps the offset entity.
+        let line: Vec<BulkSample> = vec![
+            sample(0.0, 0.0, 0.0),
+            sample(0.0, 0.0, 0.0),
+            sample(0.0, 0.0, 0.0),
+            sample(20.0, 0.0, 0.0),
+        ];
+        let ((min, max), kept) = bulk_bounds(&line, BULK_SIGMA).expect("bulk");
+        assert!(kept >= 1, "kept {kept}");
+        assert!(max.x >= min.x);
+    }
+
+    #[test]
+    fn a_large_frame_around_the_bulk_comes_back() {
+        // Zwei kleine Texte dicht beieinander und ein großer Rahmen, der beide
+        // umschließt — die Situation, in der eine reine Mittelpunkt-Prüfung den
+        // Rahmen fälschlich als Ausreißer einstufen würde.
+        let mut samples = vec![sample(12.0, 33.0, 1.0), sample(17.0, 25.0, 1.0)];
+        samples.push(BulkSample {
+            center: glam::DVec2::new(50.0, 50.0),
+            min: glam::DVec3::new(0.0, 0.0, 0.0),
+            max: glam::DVec3::new(100.0, 100.0, 0.0),
+        });
+        let ((min, max), kept) = bulk_bounds(&samples, BULK_SIGMA).expect("bulk");
+        assert_eq!(kept, 3, "der umschließende Rahmen gehört dazu");
+        assert!(min.x <= 0.5 && min.y <= 0.5, "{min:?}");
+        assert!(max.x >= 99.5 && max.y >= 99.5, "{max:?}");
+    }
+
+    #[test]
+    fn bulk_extents_ignores_a_far_entity_in_a_real_scene() {
+        // Six lines around x = 0…5, plus one line far away at x = 5000.
+        let mut scene = Scene::new();
+        for i in 0..6 {
+            scene.add_entity(acadrust::EntityType::Line(
+                acadrust::entities::Line::from_points(
+                    acadrust::types::Vector3::new(i as f64, 0.0, 0.0),
+                    acadrust::types::Vector3::new(i as f64 + 0.5, 1.0, 0.0),
+                ),
+            ));
+        }
+        scene.add_entity(acadrust::EntityType::Line(
+            acadrust::entities::Line::from_points(
+                acadrust::types::Vector3::new(5000.0, 5000.0, 0.0),
+                acadrust::types::Vector3::new(5001.0, 5001.0, 0.0),
+            ),
+        ));
+
+        let (min, max) = scene.bulk_extents().expect("bulk extents");
+        assert!(max.x < 20.0, "the stray line must stay outside the view: {max:?}");
+        assert!(max.y < 20.0, "{max:?}");
+        assert!(min.x > -20.0 && min.y > -20.0, "{min:?}");
+
+        // The full extents still contain everything — „Ansicht einpassen" is
+        // unchanged and remains the way to see absolutely everything.
+        let (_, full_max) = scene.model_space_extents().expect("model extents");
+        assert!(full_max.x > 4000.0, "{full_max:?}");
+    }
+}
+

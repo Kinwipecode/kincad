@@ -1,0 +1,65 @@
+   Compiling KINCAD v2026.36.0 (G:\Dwg_Viewer_5_on\viewer)
+vendor\cadkernel\src\brep\mod.rs:97:16: warning: unused import: `sweep_path::reversed_path_curves`
+vendor\cadkernel\src\geom2d\triangulate.rs:1116:4: warning: function `ear_score` is never used
+vendor\cadkernel\src\geom2d\triangulate.rs:1128:4: warning: function `ear_corners` is never used
+vendor\cadkernel\src\geom2d\triangulate.rs:1142:4: warning: function `is_ear` is never used
+vendor\cadkernel\src\brep\sweep_path.rs:2312:15: warning: function `reversed_path_curves` is never used
+warning: `cadkernel` (lib) generated 5 warnings (run `cargo fix --lib -p cadkernel` to apply 1 suggestion)
+src\batch.rs:343:31: error[E0425]: cannot find function `load_document_for_batch` in module `crate::io`: not found in `crate::io`
+src\batch.rs:459:31: error[E0425]: cannot find function `load_document_for_batch` in module `crate::io`: not found in `crate::io`
+src\scene\pipeline\offscreen_probe.rs:44:32: error[E0425]: cannot find function `build_derived_caches_with_progress` in module `crate::scene`
+src\scene\dwg_probe.rs:694:31: error[E0425]: cannot find function `load_bytes_finalized` in module `crate::io`: not found in `crate::io`
+src\viewer\measure.rs:62:20: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\measure.rs:362:24: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\measure.rs:577:20: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:645:24: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1165:29: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1667:25: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1735:25: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1745:36: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1813:30: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1818:30: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1897:29: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:1948:29: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\ribbon.rs:2132:29: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\mod.rs:626:20: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\mod.rs:707:20: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\mod.rs:2000:52: error[E0425]: cannot find function `pick_open_path` in module `io`: not found in `io`
+src\viewer\mod.rs:2190:41: error[E0425]: cannot find function `recover_path_with_phase` in module `io`
+src\viewer\mod.rs:3340:58: error[E0425]: cannot find function `read_file` in module `crate::cleanup`: not found in `crate::cleanup`
+src\viewer\mod.rs:3352:54: error[E0425]: cannot find function `read_file` in module `crate::cleanup`: not found in `crate::cleanup`
+src\viewer\mod.rs:3362:54: error[E0425]: cannot find function `read_file` in module `crate::cleanup`: not found in `crate::cleanup`
+src\viewer\mod.rs:3434:65: error[E0425]: cannot find function `write_file` in module `crate::cleanup`: not found in `crate::cleanup`
+src\viewer\mod.rs:3468:53: error[E0425]: cannot find function `write_file` in module `crate::cleanup`: not found in `crate::cleanup`
+src\viewer\mod.rs:3484:61: error[E0425]: cannot find function `read_file` in module `crate::cleanup`: not found in `crate::cleanup`
+src\viewer\mod.rs:4679:50: error[E0425]: cannot find function `printer_papers` in module `crate::io::print_to_printer`: not found in `crate::io::print_to_printer`
+src\viewer\mod.rs:6935:70: error[E0425]: cannot find function `default_printer` in module `crate::io::print_to_printer`: not found in `crate::io::print_to_printer`
+src\viewer\mod.rs:7607:35: error[E0425]: cannot find function `pick_open_path` in module `io`: not found in `io`
+src\viewer\mod.rs:8392:45: error[E0425]: cannot find function `load_document_for_batch` in module `crate::io`: not found in `crate::io`
+src\viewer\mod.rs:14734:42: error[E0425]: cannot find function `printer_papers` in module `crate::io::print_to_printer`: not found in `crate::io::print_to_printer`
+src\viewer\mod.rs:15363:55: error[E0425]: cannot find function `printer_papers` in module `crate::io::print_to_printer`: not found in `crate::io::print_to_printer`
+src\viewer\mod.rs:18353:25: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\viewer\mod.rs:19808:20: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\xref_attach.rs:477:24: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\picture_attach.rs:42:20: error[E0425]: cannot find function `config_dir` in module `crate::config`: not found in `crate::config`
+src\picture_attach.rs:79:46: error[E0425]: cannot find function `render_page_to_png` in module `crate::scene::model::pdf_raster`: not found in `crate::scene::model::pdf_raster`
+src\io\print_to_printer.rs:169:7: warning: unexpected `cfg` condition value: `wasm32`
+src\scene\flaechen.rs:1303:13: warning: unused import: `acadrust::entities::hatch::BoundaryPathFlags`
+src\scene\flaechen.rs:1304:34: warning: unused imports: `BoundaryEdge`, `BoundaryPath`, and `PolylineEdge`
+src\scene\flaechen.rs:1305:13: warning: unused import: `acadrust::types::Vector2`
+src\scene\dwg_probe.rs:20:5: warning: unused import: `crate::scene::render_graph`
+src\scene\dwg_probe.rs:22:34: warning: unused import: `HashSet`
+src\scene\dwg_probe.rs:23:5: warning: unused import: `std::path::PathBuf`
+src\scene\mod.rs:66:24: warning: unused imports: `boundary_entities_from_sources`, `boundary_polyline_entities`, `hatch_boundary_rings`, and `separated_hatch_path_groups`
+src\viewer\ribbon.rs:968:5: warning: unused doc comment
+src\io\mod.rs:328:10: error[E0599]: no method named `pick_folder` found for struct `AsyncFileDialog` in the current scope
+src\cleanup.rs:497:25: error[E0599]: no method named `add_entities` found for mutable reference `&mut scene::Scene` in the current scope
+src\viewer\tools.rs:2070:19: error[E0599]: no method named `add_entities` found for mutable reference `&mut scene::Scene` in the current scope
+src\viewer\mod.rs:8909:38: error[E0599]: no method named `add_entities` found for struct `scene::Scene` in the current scope
+src\scene\dwg_probe.rs:1405:9: warning: unused import: `acadrust::Entity`
+src\scene\pick\xclip.rs:198:9: warning: unused import: `acadrust::Entity`
+src\viewer\measure.rs:1966:9: warning: variable does not need to be mutable
+src\viewer\mod.rs:12652:13: warning: unused variable: `gray`: help: if this is intentional, prefix it with an underscore: `_gray`
+src\viewer\mod.rs:13779:60: warning: value assigned to `header_row` is never read: this value is reassigned later and never used
+warning: `KINCAD` (lib) generated 14 warnings
+error: could not compile `KINCAD` (lib) due to 42 previous errors; 14 warnings emitted

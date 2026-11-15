@@ -1820,6 +1820,33 @@ pub fn build_mesh_batch_filtered(
             .visual_style
             .as_ref()
             .map_or(true, |style| style.face_visible());
+        // TESTPHASE: Nachweis, ob der Magenta-Platzhalter bis zur Grafik kommt.
+        let magenta = mesh
+            .triangle_colors
+            .iter()
+            .filter(|color| **color == Some([1.0, 0.0, 1.0, 1.0]))
+            .count();
+        if magenta > 0 {
+            if let Ok(mut file) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(r"C:\Users\Administrator\AppData\Local\Temp\opencode\debug_render.log")
+            {
+                use std::io::Write;
+                let _ = writeln!(
+                    file,
+                    "{} tris={} colors={} magenta={} has_fc={} has_fm={} inst={} include_faces={}",
+                    mesh.name,
+                    triangle_count,
+                    mesh.triangle_colors.len(),
+                    magenta,
+                    has_face_colors,
+                    has_face_materials,
+                    set.instance_transform.is_some(),
+                    include_faces
+                );
+            }
+        }
         let include_edges = set
             .visual_style
             .as_ref()
@@ -2024,6 +2051,14 @@ pub fn build_mesh_batch_filtered(
         let material = part.material;
         let part_color = part.color;
         let entity_handle = part.entity_handle;
+        if part.color[0] > 0.9 && part.color[1] < 0.1 && part.color[2] > 0.9 {
+            crate::dbg_tap!(
+                "direct part tris={} color={:?} inst={}",
+                part.indices.len() / 3,
+                part.color,
+                set.instance_transform.is_some()
+            );
+        }
         let key = material_key(material, part_color);
         if active_key.is_some_and(|active| active != key)
             && (!verts.is_empty() || !edge_verts.is_empty())

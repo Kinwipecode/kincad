@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DWG Viewer</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b1016; color: #cfd8e3; font-family: system-ui, sans-serif; overflow: hidden; }
+    #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  </style>
+  <link data-trunk rel="rust" href="../Cargo.toml" data-bin="dwgviewer" data-wasm-opt="0" />
+</head>
+<body>
+  <div id="loading">DWG Viewer wird geladen …</div>
+  <script>
+    // Drag & Drop: winit meldet im Browser keine abgelegten Dateien. Die Seite liest
+    // die Datei und legt sie in window.__dwgDropped ab; die App holt sie dort ab.
+    window.__dwgDropped = null;
+    window.addEventListener("dragover", (e) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "copy"; });
+    window.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      if (!/\.(dwg|dxf)$/i.test(f.name)) { alert("Bitte eine DWG- oder DXF-Datei ablegen."); return; }
+      window.__dwgDropped = { name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) };
+    });
+    window.addEventListener("TrunkApplicationStarted", () => {
+      const l = document.getElementById("loading"); if (l) l.remove();
+    });
+  </script>
+</body>
+</html>

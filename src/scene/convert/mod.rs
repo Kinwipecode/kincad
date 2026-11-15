@@ -1,6 +1,7 @@
 pub mod acad_to_render;
 pub mod acis_export;
 pub mod acis_kernel;
+pub mod acis_outline;
 pub mod dgn_linestyle;
 pub mod tessellate;
 pub(crate) mod tess;

@@ -497,9 +497,24 @@ mod tests {
 
     #[test]
     fn test_donut_polyline_tessellates_to_analytical_arcs() {
+        use acadrust::entities::{LwPolyline, LwVertex};
+        use acadrust::types::Vector2;
         use acadrust::CadDocument;
+        // Donut = closed 2-vertex LwPolyline with full bulges and a constant
+        // width spanning inner..outer radius (the editor's DONUT geometry).
+        let (cx, cy, elevation, inner_r, outer_r) = (10.0, 20.0, 0.0, 10.0, 30.0);
+        let r_avg = (inner_r + outer_r) / 2.0;
+        let mut p = LwPolyline::new();
+        p.is_closed = true;
+        p.constant_width = outer_r - inner_r;
+        p.elevation = elevation;
+        let mut v0 = LwVertex::new(Vector2::new(cx - r_avg, cy));
+        v0.bulge = 1.0;
+        let mut v1 = LwVertex::new(Vector2::new(cx + r_avg, cy));
+        v1.bulge = 1.0;
+        p.vertices = vec![v0, v1];
+        let donut = acadrust::EntityType::LwPolyline(p);
         let mut doc = CadDocument::new();
-        let donut = crate::modules::draw::draw::donut::make_donut(10.0, 20.0, 0.0, 10.0, 30.0);
         let h = doc.add_entity(donut).unwrap();
         let entity = doc.get_entity(h).unwrap();
         let selected = rustc_hash::FxHashSet::default();

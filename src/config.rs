@@ -1,11 +1,11 @@
 //! Shared per-user config directory used by the small settings stores (recent
 //! files, status-bar layout, ribbon collapse mode, …). Everything lives under
-//! `<platform-config>/OpenCADStudio` so the app keeps a single tidy folder.
+//! `<platform-config>/KINCAD` so the app keeps a single tidy folder.
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
 
-/// The OpenCADStudio config directory (not created). `None` when the platform
+/// The KINCAD config directory (not created). `None` when the platform
 /// config base can't be resolved (e.g. no `HOME`). Callers `join` their own
 /// file name onto it and `create_dir_all` its parent before writing.
 #[cfg(not(target_arch = "wasm32"))]
@@ -27,7 +27,7 @@ pub fn config_dir() -> Option<PathBuf> {
         p
     };
     let mut p = base;
-    p.push("OpenCADStudio");
+    p.push("KINCAD");
     Some(p)
 }
 
@@ -77,3 +77,15 @@ pub fn remember_dialog_dir(file_path: &Path) {
         let _ = std::fs::write(cfg.join("last_dir.txt"), dir.display().to_string());
     }
 }
+
+// ── wasm: kein Dateisystem, keine Dauer-Einstellungen im Ordner ────────────
+#[cfg(target_arch = "wasm32")]
+pub fn config_dir() -> Option<std::path::PathBuf> {
+    None
+}
+#[cfg(target_arch = "wasm32")]
+pub fn last_dialog_dir() -> Option<std::path::PathBuf> {
+    None
+}
+#[cfg(target_arch = "wasm32")]
+pub fn remember_dialog_dir(_file_path: &std::path::Path) {}

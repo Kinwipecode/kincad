@@ -3885,6 +3885,7 @@ fn tessellate_dimension_inner(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: 0.0,
                     depth_override: None,
@@ -3921,6 +3922,7 @@ fn tessellate_dimension_inner(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: 0.0,
                     depth_override: None,
@@ -3957,6 +3959,7 @@ fn tessellate_dimension_inner(
                 bg_adapt: None,
                 point_marker: None,
                 taper_widths: Vec::new(),
+                screen_text: None,
                 pattern_stations: Vec::new(),
                 world_width: 0.0,
                 depth_override: None,
@@ -3994,6 +3997,7 @@ fn tessellate_dimension_inner(
         bg_adapt: None,
         point_marker: None,
         taper_widths: Vec::new(),
+        screen_text: None,
         pattern_stations: Vec::new(),
         world_width: 0.0,
         depth_override: None,
@@ -4039,6 +4043,7 @@ fn tessellate_dimension_inner(
             bg_adapt: None,
             point_marker: None,
             taper_widths: Vec::new(),
+            screen_text: None,
             pattern_stations: Vec::new(),
             world_width: 0.0,
             depth_override: None,
@@ -4088,6 +4093,7 @@ fn tessellate_dimension_inner(
                     bg_adapt: None,
                     point_marker: None,
                     taper_widths: Vec::new(),
+                    screen_text: None,
                     pattern_stations: Vec::new(),
                     world_width: 0.0,
                     depth_override: None,
@@ -4139,6 +4145,7 @@ fn tessellate_dimension_inner(
                 bg_adapt: None,
                 point_marker: None,
                 taper_widths: Vec::new(),
+                screen_text: None,
                 pattern_stations: Vec::new(),
                 world_width: 0.0,
                 depth_override: None,
@@ -4192,8 +4199,29 @@ fn tessellate_dimension_inner(
             world_per_pixel,
             text_color,
         );
+        // Measurement text keeps a fixed pixel height when zooming: remember the
+        // text's centre and world height so the renderer can rescale the glyphs.
+        let screen_text = {
+            let (mut lo, mut hi) = ([f64::MAX; 3], [f64::MIN; 3]);
+            for w in &text_wires {
+                for v in &w.text_verts {
+                    for i in 0..3 {
+                        let c = v.pos[i] as f64 + v.pos_low[i] as f64;
+                        lo[i] = lo[i].min(c);
+                        hi[i] = hi[i].max(c);
+                    }
+                }
+            }
+            (lo[0] <= hi[0] && dim_txt > 0.0).then(|| {
+                (
+                    [(lo[0] + hi[0]) * 0.5, (lo[1] + hi[1]) * 0.5, (lo[2] + hi[2]) * 0.5],
+                    dim_txt as f32,
+                )
+            })
+        };
         for mut w in text_wires {
             w.name = name.clone();
+            w.screen_text = screen_text;
             wires.push(w);
         }
 
@@ -4211,6 +4239,7 @@ fn tessellate_dimension_inner(
             );
             for mut w in tol_wires {
                 w.name = name.clone();
+                w.screen_text = screen_text;
                 wires.push(w);
             }
         }

@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod gpu_tests;
 mod device_capabilities;
+mod offscreen_probe;
 pub mod circle_gpu;
 pub mod ellipse_gpu;
 pub mod face3d_gpu;
@@ -581,7 +582,7 @@ impl Pipeline {
         // Select the renderer tier from device limits.
         let device_caps = DeviceCapabilities::detect(device);
         #[cfg(not(target_arch = "wasm32"))]
-        let force_compat_renderer = crate::cli::gui_config().compat_renderer;
+        let force_compat_renderer = std::env::var_os("OCS_COMPAT_RENDERER").is_some();
         #[cfg(target_arch = "wasm32")]
         let force_compat_renderer = false;
         let wire_mode =

@@ -236,7 +236,6 @@ fn finish(
     remap_acis_material_bindings(&mut set, acis);
     Some(set)
 }
-
 pub fn tessellate_region(
     region: &Region,
     color: [f32; 4],

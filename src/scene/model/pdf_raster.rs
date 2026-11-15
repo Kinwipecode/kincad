@@ -81,10 +81,20 @@ fn rasterize_uncached(path: &str, page: &str) -> Option<Arc<PdfPage>> {
             path,
             &prefix_str,
         ])
-        .status()
-        .ok()?;
-    if !status.success() {
-        return None;
+        .status();
+    if !matches!(status, Ok(ref s) if s.success()) {
+        // Kein pdftoppm (Windows): der eingebaute Renderer übernimmt.
+        let png = std::path::PathBuf::from(format!("{prefix_str}-win.png"));
+        let (width, height, _) =
+            render_page_to_png(std::path::Path::new(path), page_no, RASTER_DPI, &png).ok()?;
+        let decoded = image::open(&png).ok()?.to_rgba8();
+        let _ = std::fs::remove_file(&png);
+        return Some(Arc::new(PdfPage {
+            pixels: Arc::new(decoded.into_raw()),
+            width,
+            height,
+            dpi: RASTER_DPI as f32,
+        }));
     }
 
     // Find the produced file: `<prefix>-1.png`, `-01.png`, … depending on the
@@ -115,4 +125,71 @@ fn rasterize_uncached(path: &str, page: &str) -> Option<Arc<PdfPage>> {
 #[cfg(target_arch = "wasm32")]
 pub fn rasterize_page(_path: &str, _page: &str) -> Option<Arc<PdfPage>> {
     None
+}
+
+// ── Windows: eingebauter PDF-Renderer (kein pdftoppm nötig) ─────────────────
+
+/// Das PowerShell-Skript, das `Windows.Data.Pdf` benutzt (liegt im Programm).
+#[cfg(all(windows, not(target_arch = "wasm32")))]
+const WINDOWS_PDF_SCRIPT: &str = include_str!("../../../assets/pdf_render.ps1");
+
+/// Eine PDF-Seite als PNG-Datei rendern. Rückgabe: (Breite, Höhe, Seitenzahl) in
+/// Pixeln bei `dpi`. Erst `pdftoppm` (falls vorhanden), unter Windows sonst der
+/// eingebaute Renderer.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn render_page_to_png(
+    pdf: &std::path::Path,
+    page: u32,
+    dpi: u32,
+    out_png: &std::path::Path,
+) -> Result<(u32, u32, u32), String> {
+    if !pdf.is_file() {
+        return Err(format!("PDF nicht gefunden: {}", pdf.display()));
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let script = std::env::temp_dir().join("ocs_pdf_render.ps1");
+        std::fs::write(&script, WINDOWS_PDF_SCRIPT).map_err(|e| e.to_string())?;
+        let output = std::process::Command::new("powershell.exe")
+            .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
+            .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+            .arg(&script)
+            .arg("-Pdf")
+            .arg(pdf)
+            .arg("-Out")
+            .arg(out_png)
+            .args(["-Page", &page.to_string(), "-Dpi", &dpi.to_string()])
+            .output()
+            .map_err(|e| format!("PowerShell nicht startbar: {e}"))?;
+        if output.status.success() {
+            let text = String::from_utf8_lossy(&output.stdout);
+            let nums: Vec<u32> = text
+                .split_whitespace()
+                .filter_map(|t| t.parse().ok())
+                .collect();
+            if let [w, h, pages] = nums[..] {
+                return Ok((w, h, pages));
+            }
+        }
+        let err = String::from_utf8_lossy(&output.stderr);
+        let first = err.lines().find(|l| !l.trim().is_empty()).unwrap_or("unbekannter Fehler");
+        return Err(format!("PDF konnte nicht gerendert werden: {first}"));
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (page, dpi, out_png);
+        Err("PDF-Rendern braucht pdftoppm (poppler-utils).".to_string())
+    }
+}
+
+/// wasm: kein externer Prozess verfügbar.
+#[cfg(target_arch = "wasm32")]
+pub fn render_page_to_png(
+    _pdf: &std::path::Path,
+    _page: u32,
+    _dpi: u32,
+    _out_png: &std::path::Path,
+) -> Result<(u32, u32, u32), String> {
+    Err("PDF rendering is unavailable in the web build".into())
 }

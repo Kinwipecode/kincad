@@ -3341,6 +3341,51 @@ impl Scene {
     /// set (pan / zoom) is walked once, not every frame; the id changes when
     /// geometry or selection rebuilds the wires, re-tinting selected glyphs.
     /// Empty when SDF text is disabled.
+    /// Pixel height of dimension text, independent of the zoom.
+    const DIM_TEXT_PX: f32 = 12.0;
+
+    /// Dimension-text glyphs rescaled about their anchor so they keep
+    /// [`Self::DIM_TEXT_PX`] on screen at `wpp` world units per pixel.
+    fn screen_text_verts(
+        wires: &[WireModel],
+        depth_map: &rustc_hash::FxHashMap<u64, [f32; 2]>,
+        wpp: f32,
+        out: &mut Vec<crate::scene::pipeline::text_gpu::TextVertex>,
+    ) {
+        if !(wpp.is_finite() && wpp > 0.0) {
+            return;
+        }
+        for w in wires {
+            let Some((anchor, height)) = w.screen_text else { continue };
+            if !w.display_visible || w.render_instance.is_some() || w.text_verts.is_empty() {
+                continue;
+            }
+            if !(height.is_finite() && height > 0.0) {
+                continue;
+            }
+            // Nur verkleinern: beim Hineinzoomen bleibt der Text bei DIM_TEXT_PX,
+            // beim Herauszoomen schrumpft er wie die Zeichnung (nie größer).
+            let k = ((Self::DIM_TEXT_PX * wpp / height) as f64).min(1.0);
+            let d = crate::scene::pipeline::wire_gpu::wire_draw_depth(w, depth_map);
+            for tv in &w.text_verts {
+                let mut v = *tv;
+                let mut hi = [0.0f32; 3];
+                let mut lo = [0.0f32; 3];
+                for i in 0..3 {
+                    let p = tv.pos[i] as f64 + tv.pos_low[i] as f64;
+                    let q = anchor[i] + (p - anchor[i]) * k;
+                    let (h, l) = crate::scene::pipeline::text_gpu::split_ds(q);
+                    hi[i] = h;
+                    lo[i] = l;
+                }
+                v.pos = hi;
+                v.pos_low = lo;
+                v.draw_depth += d;
+                out.push(v);
+            }
+        }
+    }
+
     pub(in crate::scene) fn gather_text_verts(
         &self,
         wires: &[WireModel],
@@ -3391,6 +3436,10 @@ impl Scene {
                 continue;
             }
             if w.render_instance.is_some() {
+                continue;
+            }
+            if w.screen_text.is_some() {
+                // Dimension text: rescaled per frame (`screen_text_verts`).
                 continue;
             }
             if !w.text_verts.is_empty() {
@@ -3694,7 +3743,11 @@ impl Scene {
         // `CursorMoved` handler — the cube overlay sits above the shader
         // and would otherwise mask the move event from `Program::update`.
         let hover_region = show_interaction.then(|| self.viewcube_hover.get()).flatten();
-        self.selection.borrow_mut().vp_size = (bounds.width, bounds.height);
+        {
+            let mut sel = self.selection.borrow_mut();
+            sel.vp_size = (bounds.width, bounds.height);
+            sel.vp_origin = iced::Point::new(bounds.x, bounds.y);
+        }
         if bounds.height > 0.0 {
             self.set_render_aspect(bounds.width / bounds.height);
             self.set_render_pixel_scale(bounds.width, bounds.height);
@@ -4256,6 +4309,10 @@ impl Scene {
             }
             if show_live_overlay {
                 pv.extend_from_slice(&self.preview_text);
+            }
+            if inst.camera.projection == crate::scene::view::camera::Projection::Orthographic {
+                let wpp = 2.0 * inst.camera.ortho_size() / full.height.max(1.0);
+                Self::screen_text_verts(&all_wires, &draw_depths, wpp, &mut pv);
             }
             Arc::new(pv)
         };

@@ -5,6 +5,7 @@ use iced::Point;
 #[derive(Clone, Default)]
 pub struct SelectionState {
     pub vp_size: (f32, f32),
+    pub vp_origin: Point,
     pub box_anchor: Option<Point>,
     /// World point under the box-selection anchor, so the anchor can be
     /// re-projected to screen when the camera zooms/pans mid-drag instead of
@@ -58,6 +59,10 @@ pub struct SelectionState {
 }
 
 impl SelectionState {
+    pub fn canvas_local_pos(&self, p: Point) -> Point {
+        Point::new(p.x - self.vp_origin.x, p.y - self.vp_origin.y)
+    }
+
     /// End every left-button selection gesture without disturbing the previous
     /// completed-window record or command-owned preview marquee. Grip editing
     /// owns the left button while engaged and calls this before/after placement

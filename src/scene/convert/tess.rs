@@ -155,7 +155,12 @@ pub(crate) fn expand_block_object(
                 anno_scale,
                 options.scale_policy,
             );
-            let polygon = pick::xclip::world_clip_polygon_for_transform(filter, &transform);
+            // Validate the clip polygon against the content it is meant to
+            // frame: writers that store the boundary in WCS with an identity
+            // inverse transform otherwise blank the whole reference.
+            let content = pick::xclip::wires_world_aabb(&wires);
+            let polygon =
+                pick::xclip::world_clip_polygon_for_content(filter, &transform, content);
             pick::xclip::clip_wires(&mut wires, &polygon);
             for wire in &mut wires {
                 if let Some(mut instance) = wire.render_instance {
@@ -926,6 +931,7 @@ fn tessellate_entity_inner(
             bg_adapt: None,
             point_marker: None,
             taper_widths: Vec::new(),
+            screen_text: None,
             pattern_stations: Vec::new(),
             world_width: 0.0,
             depth_override: None,
@@ -1171,6 +1177,7 @@ fn tessellate_entity_inner(
             bg_adapt: None,
             point_marker: None,
             taper_widths: Vec::new(),
+            screen_text: None,
             pattern_stations: Vec::new(),
             world_width: 0.0,
             depth_override: None,
@@ -1516,6 +1523,7 @@ fn lod_stub_wire(
         bg_adapt: None,
         point_marker: None,
         taper_widths: Vec::new(),
+        screen_text: None,
         pattern_stations: Vec::new(),
         world_width: 0.0,
         depth_override: None,
@@ -1612,6 +1620,7 @@ fn lod_stub_wire_3d(
         bg_adapt: None,
         point_marker: None,
         taper_widths: Vec::new(),
+        screen_text: None,
         pattern_stations: Vec::new(),
         world_width: 0.0,
         depth_override: None,

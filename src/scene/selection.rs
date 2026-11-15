@@ -37,10 +37,39 @@ impl Scene {
         })
     }
 
+    /// True, wenn `handle` zu einer im Fenster „Referenzen“ **gesperrten**
+    /// Referenz gehört (das INSERT selbst oder ein Objekt aus ihrem Block).
+    /// Solche Objekte lassen sich nicht auswählen.
+    pub fn is_in_locked_xref(&self, handle: Handle) -> bool {
+        if self.xref_locks.is_empty() {
+            return false;
+        }
+        let Some(entity) = self.document.get_entity(handle) else {
+            return false;
+        };
+        if let EntityType::Insert(insert) = entity {
+            if self.xref_locks.iter().any(|n| n.eq_ignore_ascii_case(&insert.block_name)) {
+                return true;
+            }
+        }
+        let owner = entity.common().owner_handle;
+        self.document
+            .block_records
+            .iter()
+            .find(|record| record.handle == owner)
+            .is_some_and(|record| {
+                (record.flags.is_xref || record.flags.is_xref_overlay)
+                    && self.xref_locks.iter().any(|n| n.eq_ignore_ascii_case(&record.name))
+            })
+    }
+
     fn expanded_with_leaders(&self, handles: &[Handle]) -> Vec<Handle> {
         let leaders = self.leaders_by_annotation();
         let mut expanded = Vec::with_capacity(handles.len());
         for &handle in handles {
+            if self.is_in_locked_xref(handle) {
+                continue;
+            }
             let start = expanded.len();
             expanded.push(handle);
             if let Some(EntityType::Leader(leader)) = self.document.get_entity(handle) {
@@ -267,20 +296,20 @@ impl Scene {
             .unwrap_or_default()
     }
 
-    fn qselect_candidate_handles(&self, scope: crate::app::QSelectScope) -> Vec<Handle> {
+    fn qselect_candidate_handles(&self, scope: crate::scene::qselect::QSelectScope) -> Vec<Handle> {
         match scope {
-            crate::app::QSelectScope::CurrentSpace => self.current_layout_entity_handles(),
-            crate::app::QSelectScope::CurrentSelection => {
+            crate::scene::qselect::QSelectScope::CurrentSpace => self.current_layout_entity_handles(),
+            crate::scene::qselect::QSelectScope::CurrentSelection => {
                 self.selected_handles_in_order()
             }
         }
     }
 
-    pub fn qselect_candidate_count(&self, scope: crate::app::QSelectScope) -> usize {
+    pub fn qselect_candidate_count(&self, scope: crate::scene::qselect::QSelectScope) -> usize {
         self.qselect_candidate_handles(scope).len()
     }
 
-    pub fn qselect_entity_type_names(&self, scope: crate::app::QSelectScope) -> Vec<String> {
+    pub fn qselect_entity_type_names(&self, scope: crate::scene::qselect::QSelectScope) -> Vec<String> {
         use crate::entities::traits::entity_type_name;
         let mut names = std::collections::BTreeSet::new();
         for h in self.qselect_candidate_handles(scope) {
@@ -314,7 +343,7 @@ impl Scene {
             }
             if let Some(e) = self.document.get_entity(h) {
                 let key = (entity_type_name(e), e.as_entity().layer().to_string());
-                if pairs.contains(&key) {
+                if pairs.contains(&key) && !self.is_in_locked_xref(h) {
                     self.selected.insert(h);
                     self.selected_order.push(h);
                     added += 1;
@@ -341,7 +370,7 @@ impl Scene {
         self.selected.clear();
         self.selected_order.clear();
         for h in all {
-            if !prev.contains(&h) {
+            if !prev.contains(&h) && !self.is_in_locked_xref(h) {
                 self.selected.insert(h);
                 self.selected_order.push(h);
             }
@@ -363,15 +392,15 @@ impl Scene {
     /// reject anything non-numeric.
     pub fn qselect(
         &mut self,
-        scope: crate::app::QSelectScope,
+        scope: crate::scene::qselect::QSelectScope,
         type_name: Option<&str>,
         property_field: Option<&str>,
-        op: crate::app::QSelectOp,
+        op: crate::scene::qselect::QSelectOp,
         value: &str,
-        mode: crate::app::QSelectMode,
+        mode: crate::scene::qselect::QSelectMode,
         append: bool,
     ) -> usize {
-        use crate::app::{QSelectMode, QSelectOp};
+        use crate::scene::qselect::{QSelectMode, QSelectOp};
         use crate::entities::traits::entity_type_name;
         let previous = self.selected.clone();
         let handles = self.qselect_candidate_handles(scope);
@@ -532,11 +561,11 @@ impl Scene {
     pub fn qselect_properties(
         &self,
         type_name: Option<&str>,
-        scope: crate::app::QSelectScope,
-    ) -> Vec<crate::app::QSelectPropertyChoice> {
+        scope: crate::scene::qselect::QSelectScope,
+    ) -> Vec<crate::scene::qselect::QSelectPropertyChoice> {
         use crate::entities::traits::{entity_type_name, EntityTypeOps};
         use crate::scene::model::object::PropValue;
-        use crate::app::{QSelectPropertyChoice, QSelectValueEditor};
+        use crate::scene::qselect::{QSelectPropertyChoice, QSelectValueEditor};
 
         let candidate_handles: Vec<Handle> = self
             .qselect_candidate_handles(scope)
@@ -933,6 +962,12 @@ impl Scene {
 
     fn remove_entities(&mut self, handles: &[Handle], respect_layer_locks: bool) {
         let erase_handles = self.handles_expanded_for_leader_annotations(handles);
+        // Flächentexte bleiben stehen, solange ihre Figur lebt; mit der Figur gehen sie mit.
+        let erase_handles = if respect_layer_locks {
+            self.area_filter_erase(erase_handles).0
+        } else {
+            erase_handles
+        };
 
         let mut handle_set: HashSet<Handle> = HashSet::default();
         let mut erased: Vec<(Handle, ChangeKind)> = Vec::new();
@@ -942,6 +977,16 @@ impl Scene {
         for &h in &erase_handles {
             // Objects on a locked layer can't be erased.
             if respect_layer_locks && self.is_layer_locked(h) {
+                continue;
+            }
+            // Eine externe Referenz verschwindet nur über das Fenster „Referenzen"
+            // (dort mit Rückfrage) — nie über „Löschen" in der Zeichnung, sonst
+            // trifft ein Klick daneben die ganze eingebundene Zeichnung.
+            if respect_layer_locks && self.is_xref_reference(h) {
+                continue;
+            }
+            // Und ihr Inhalt bleibt unangetastet, solange die Referenz gesperrt ist.
+            if respect_layer_locks && self.is_xref_locked(h) {
                 continue;
             }
             let settings_handle = self.document.get_entity(h).and_then(|entity| match entity {

@@ -455,6 +455,21 @@ impl<'a> RenderSceneGraph<'a> {
             [base, parent.depth_scale / (count as f32 + 1.0)]
         };
 
+        // XCLIP: resolve the filter and the referenced block's content bounds
+        // once for all array-offset instances (same block, only the placement
+        // differs per instance). The bounds feed the clip-polygon validation in
+        // `world_clip_polygon_for_content`, which rescues files whose writer
+        // stored the boundary already in WCS with an identity inverse
+        // transform — without it those clips land far from the placed content
+        // and blank the entire block reference.
+        let clip_filter =
+            crate::scene::pick::xclip::insert_spatial_filter(self.document, insert);
+        let clip_local_bounds = clip_filter.and_then(|_| {
+            crate::scene::pick::xclip::block_local_content_aabb(
+                self.document,
+                &insert.block_name,
+            )
+        });
         for offset in array_offsets(insert) {
             let local = insert_instance_transform(
                 self.document,
@@ -474,13 +489,13 @@ impl<'a> RenderSceneGraph<'a> {
             context.depth_scale = depth_scale;
             context.nesting_depth += 1;
             context.scale_policy = scale_policy;
-            if let Some(filter) = crate::scene::pick::xclip::insert_spatial_filter(
-                self.document,
-                insert,
-            ) {
-                let polygon = crate::scene::pick::xclip::world_clip_polygon_for_transform(
+            if let Some(filter) = clip_filter {
+                let content = clip_local_bounds
+                    .map(|aabb| crate::scene::pick::xclip::transformed_aabb(aabb, &transform));
+                let polygon = crate::scene::pick::xclip::world_clip_polygon_for_content(
                     filter,
                     &transform,
+                    content,
                 );
                 if polygon.len() >= 3 {
                     context.clips.push(polygon);

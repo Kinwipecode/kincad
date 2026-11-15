@@ -1,17 +1,12 @@
 [package]
-name = "OpenCADStudio"
+name = "KINCAD"
 version = "2026.36.0"
 edition = "2021"
 build = "build.rs"
-default-run = "OpenCADStudio"
 
-[workspace]
-members = [
-    "crates/ocs_plugin_api",
-    "crates/ocs_web_worker",
-    "crates/dwg-thumbnailer",
-    "crates/dwg-thumbnailer-win",
-]
+[[bin]]
+name = "dwgviewer"
+path = "src/main.rs"
 
 [target.'cfg(windows)'.build-dependencies]
 winresource = "0.1"
@@ -19,27 +14,16 @@ winresource = "0.1"
 [dependencies]
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
-base64 = "0.22"
-semver = "1"
 iced = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39", features = ["image", "svg", "advanced", "canvas", "smol", "markdown"] }
-iced_runtime = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
-iced_core = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
-iced_aw = { git = "https://github.com/HakanSeven12/iced_aw.git", branch = "agent/fix-iced-fonts", features = ["menu", "context_menu", "color_picker", "drop_down"] }
 bytemuck = { version = "1.25", features = ["derive"] }
 glam = { version = "0.33", features = ["bytemuck"] }
 rfd = "0.17"
-clap = { version = "4", features = ["derive", "string"] }
 env_logger = "0.11"
 acadrust = { git = "https://github.com/HakanSeven12/cadcodec.git", rev = "88fdb556dc8a292931a52b52ba42fc322dd39c23", features = ["serde"] }
 cadkernel = { git = "https://github.com/HakanSeven12/cadkernel.git", rev = "a3185be8189d78d6e93b4ea5b9238b184da4f3cf", features = ["acis", "offset"] }
 cadkernel-constraints = { git = "https://github.com/HakanSeven12/cadkernel.git", rev = "a3185be8189d78d6e93b4ea5b9238b184da4f3cf" }
-dwg-thumbnailer = { path = "crates/dwg-thumbnailer" }
 flate2 = "1"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp", "tiff"] }
-# Rasterises assets/logo.svg into the window icon at startup, so the taskbar
-# icon comes from the same file every other build target does. Already in the
-# tree behind iced's svg feature; named here only to use it directly.
-resvg = { version = "0.45", default-features = false }
 i18n-embed = { version = "0.16", features = ["fluent-system"] }
 i18n-embed-fl = "0.10"
 rust-embed = "8"
@@ -59,24 +43,8 @@ naga = { version = "27", features = ["wgsl-in"] }
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_Foundation"] }
 
-[target.'cfg(target_os = "linux")'.dependencies]
-ashpd = { version = "0.13.13", default-features = false, features = ["async-io", "wayland"] }
-
-# For `src/bin/ocs_launcher.rs` only (the .app's real CFBundleExecutable,
-# see that file for why) — already in the tree transitively via winit, pinned
-# here to the same versions Cargo already resolves for it.
-[target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.5"
-objc2-app-kit = { version = "0.2", features = ["NSApplication", "NSResponder", "NSRunningApplication"] }
-objc2-foundation = { version = "0.2", features = ["NSArray", "NSURL", "NSString", "NSObject", "NSNotification", "NSThread", "NSEnumerator"] }
-
-[patch.crates-io]
-iced_core = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
-iced_widget = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
-
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 getrandom = "0.3"
-ocs_plugin_api = { path = "crates/ocs_plugin_api", features = ["host"] }
 bincode = "1.3"
 meshopt = "0.6.2"
 i18n-embed = { version = "0.16", features = ["desktop-requester"] }
@@ -86,7 +54,6 @@ printpdf = { version = "0.9.1", default-features = false }
 ureq = { version = "3", default-features = false, features = ["rustls", "platform-verifier", "win-system-proxy"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-ocs_plugin_api = { path = "crates/ocs_plugin_api" }
 i18n-embed = { version = "0.16", features = ["web-sys-requester"] }
 rust-embed = { version = "8", features = ["debug-embed"] }
 console_error_panic_hook = "0.1"
@@ -106,19 +73,8 @@ web-sys = { version = "=0.3.85", features = [
     "HtmlAnchorElement",
     "Blob",
     "File",
-    "FileSystemDirectoryHandle",
-    "FileSystemFileHandle",
-    "FileSystemGetDirectoryOptions",
-    "FileSystemGetFileOptions",
-    "FileSystemWritableFileStream",
-    "WritableStream",
     "Url",
     "Response",
-    "Worker",
-    "WorkerOptions",
-    "WorkerType",
-    "MessageEvent",
-    "ErrorEvent",
     "Clipboard",
     "KeyboardEvent",
     "KeyboardEventInit",
@@ -134,9 +90,31 @@ web-sys = { version = "=0.3.85", features = [
 ] }
 iced = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39", features = ["webgl", "fira-sans"] }
 
+[patch.crates-io]
+iced_core = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
+iced_widget = { git = "https://github.com/iced-rs/iced.git", rev = "23604ff22ab0aad9e00b9327cb7b8546ed84db39" }
+
+# Kernel als Kopie im Projekt: sie trägt den Upstream-Fix a90a89b gegen Flächen
+# ohne Netz (Randpunkte, die „ein Haar" auseinanderliegen, #1538) — der gepinnte
+# Stand a3185be hat ihn nicht. Die Kopie bindet acadrust weiterhin an denselben
+# rev wie oben, der Leser bleibt also unberührt. Beim Anheben des Kernels muss
+# diese Sektion entfernt oder neu geschnitten werden (siehe vendor/UPSTREAM.md).
+[patch."https://github.com/HakanSeven12/cadkernel.git"]
+cadkernel = { path = "vendor/cadkernel" }
+cadkernel-constraints = { path = "vendor/cadkernel/crates/cadkernel-constraints" }
+
 [profile.release]
 strip = true
 
-[[bench]]
-name = "performance_benchmarks"
-harness = false
+# Debug-Build (dev.bat): Kernel und Leser optimiert, sonst braucht das Netz der
+# ACIS-Koerper in der Debug-Stufe ein Vielfaches der Zeit. Die App selbst bleibt
+# unoptimiert, damit Aenderungen schnell kompilieren.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package.cadkernel]
+opt-level = 3
+[profile.dev.package.spade]
+opt-level = 3
+[profile.dev.package.acadrust]
+opt-level = 3
