@@ -1,3 +1,30 @@
+> [!IMPORTANT]
+> **Attribution - this is a modified version.**
+> This repository (**Kincad**) was **not written from scratch by its owner**.
+> It is based on [Open CAD Studio](https://github.com/HakanSeven12/OpenCADStudio)
+> by **HakanSeven12** and its contributors, which was used as the **starting base**.
+> Numerous changes and improvements were then made on top of that base.
+>
+> - **Original project:** <https://github.com/HakanSeven12/OpenCADStudio>
+> - **License:** GNU GPL v3.0. This modified version remains licensed under GPL-3.0 (see [LICENSE](LICENSE)).
+> - **Modifications:** made from 2026-11-15 onward.
+> - This project is **not affiliated with, sponsored by, or endorsed by** the original author.
+
+### Changes relative to the original
+
+This fork (**Kincad**) was derived from Open CAD Studio and then reworked. Main differences:
+
+- **Renamed project**: crate name `KINCAD`, binary `dwgviewer` (originally `OpenCADStudio`).
+- **Viewer-centric architecture**: new `src/viewer/*` modules for measuring, grips, ribbon UI, drawing tools, printing, in-place text editing, XRef attach, bounds/origin overlays, and viewport handling.
+- **New feature modules**: `area_layout`, `batch`, `cleanup`, `purge`, `scale`, `layout_export`, `layout_fuse`, `picture_attach`, `qselect`, `units`, DWG probe, and ACIS outline conversion.
+- **Web build reworked**: Trunk/WASM web app under `webapp/` (replacing the previous `web-app.html`).
+- **New integration tests**: layout round-trip, DWG version matrix, print mapping, explode preservation, OSNAP aperture, and more.
+- **Simplified build**: dropped the Cargo workspace plus the plugin-API and DWG-thumbnailer crates, and trimmed the dependency set (e.g. `iced_aw`, `iced_runtime`/`iced_core`, `clap`, `semver`, `base64`, `resvg`, `ashpd`).
+
+The project as a whole is distributed under GPL-3.0; see [LICENSE](LICENSE).
+
+---
+
 <p align="center">
   <a href="README.md">English</a> ·
   <a href="docs/readme/README.bg.md">Български</a> ·
