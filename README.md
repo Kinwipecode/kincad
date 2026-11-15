@@ -94,7 +94,23 @@ The project is under active development. Keep backups of important production dr
 - **Extensible workflows** — native plugins, command scripts, headless conversion, and a line-based JSON automation API.
 
 <p align="center">
-  <img src="site/modeling.png" alt="3D model in Open CAD Studio" width="100%">
+  <img src="site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%">
+</p>
+
+## DWG-Formate &amp; Konverter
+
+Hier bieten wir die Kompatibilität mit verschiedenen DWG-Formaten. Im Programm ist ein Konverter integriert, der die Zeichnungen gemäß eines Rezepts von unerwünschten Bestandteilen bereinigt. Dies ist in den Bildern zwei und drei deutlich zu erkennen. Die Zeichnung lässt sich skalieren und mit einem Einfügepunkt versehen. Dies geschieht in einem Stapel, das heißt, mehrere Zeichnungen können nach einem Rezept bearbeitet werden. Danach werden sie automatisch gespeichert.
+
+<p align="center">
+  <img src="site/dwg-version.png" alt="Dialog „Speichern“: DWG-Version wählen (2018 bis 2000)" width="60%">
+</p>
+
+<p align="center">
+  <img src="site/recipe.png" alt="Dialog „Zeichnung aufräumen“: Rezept mit Blöcke zerlegen, Elementarten entfernen, skalieren und Einfügepunkt setzen" width="100%">
+</p>
+
+<p align="center">
+  <img src="site/batch.png" alt="Dialog „Stapelbereinigung der Pläne“: mehrere Zeichnungen nach einem Rezept bereinigen und speichern" width="75%">
 </p>
 
 ## File workflows
@@ -240,32 +256,6 @@ Application translations live in `locales/*/opencadstudio.ftl`; source labels ma
 `src/locale_catalog.rs`. After editing translations, run `python3 scripts/export-locales.py`
 to refresh web and desktop packaging labels. Validate with `python3 scripts/test_site.py`
 and `cargo test --lib i18n::tests`.
-
-## Project growth
-
-### Stars
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio star history" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-### Release downloads
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/releases">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/download-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/download-history-light.svg">
-    <img alt="Open CAD Studio release download history" src="https://www.opencadstudio.com/download-history-light.svg">
-  </picture>
-</a>
-
-## Support the project
-
-If Open CAD Studio helps your work, support continued development through [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) or [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## License
 

@@ -36,7 +36,7 @@ Open CAD Studio تطبيق متعدد المنصات للرسم التقني و�
 - **تصيير عبر GPU** — إطارات عرض ثنائية وثلاثية الأبعاد مسرّعة بواسطة `wgpu` مع كاميرات متعامدة ومنظورية.
 - **سير عمل قابل للتوسعة** — إضافات أصلية ونصوص أوامر وتحويل من دون واجهة وواجهة JSON للأتمتة تعتمد على الأسطر.
 
-<p align="center"><img src="../../site/modeling.png" alt="نموذج ثلاثي الأبعاد في Open CAD Studio" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## سير عمل الملفات
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - ابحث في [المشكلات](https://github.com/HakanSeven12/OpenCADStudio/issues) الحالية قبل فتح تقرير جديد.
 - استخدم [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) للأسئلة والأفكار.
 - أبلغ عن الثغرات بشكل خاص وفق [سياسة الأمان](../../SECURITY.md).
-
-## نمو المشروع
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="نجوم Open CAD Studio وتنزيلات الإصدارات" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## دعم المشروع
-
-إذا ساعدك Open CAD Studio في عملك، فادعم استمرار التطوير عبر [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) أو [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## الترخيص
 

@@ -38,7 +38,7 @@
 - **Απόδοση μέσω GPU** — επιταχυνόμενες δισδιάστατες και τρισδιάστατες προβολές μέσω του `wgpu`, με ορθογραφικές και προοπτικές κάμερες.
 - **Επεκτάσιμες ροές εργασίας** — εγγενή πρόσθετα, δέσμες εντολών, μετατροπή χωρίς γραφικό περιβάλλον και API αυτοματισμού JSON με ένα αντικείμενο ανά γραμμή.
 
-<p align="center"><img src="../../site/modeling.png" alt="Τρισδιάστατο μοντέλο στο Open CAD Studio" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Μορφές αρχείων και εργασίες
 
@@ -178,32 +178,6 @@ OpenCADStudio --mcp
 - Αναζητήστε στα υπάρχοντα [issues](https://github.com/HakanSeven12/OpenCADStudio/issues) πριν υποβάλετε νέα αναφορά.
 - Χρησιμοποιήστε τα [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) για ερωτήσεις και ιδέες.
 - Αναφέρετε ιδιωτικά τυχόν ευπάθειες, ακολουθώντας την [πολιτική ασφάλειας](../../SECURITY.md).
-
-## Ανάπτυξη του έργου
-
-### Αστέρια
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Ιστορικό αστεριών του Open CAD Studio" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-### Λήψεις εκδόσεων
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/releases">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/download-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/download-history-light.svg">
-    <img alt="Ιστορικό λήψεων εκδόσεων του Open CAD Studio" src="https://www.opencadstudio.com/download-history-light.svg">
-  </picture>
-</a>
-
-## Υποστήριξη του έργου
-
-Αν το Open CAD Studio σας βοηθά στην εργασία σας, υποστηρίξτε τη συνεχή ανάπτυξή του μέσω του [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) ή του [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## Άδεια χρήσης
 

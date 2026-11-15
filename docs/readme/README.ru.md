@@ -36,7 +36,7 @@ Open CAD Studio — кроссплатформенное приложение д
 - **Отрисовка на GPU** — ускоренные 2D- и 3D-виды через `wgpu`, ортографическая и перспективная камеры.
 - **Расширяемые процессы** — нативные плагины, сценарии команд, преобразование без интерфейса и построчный JSON API автоматизации.
 
-<p align="center"><img src="../../site/modeling.png" alt="3D-модель в Open CAD Studio" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Работа с файлами
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - Перед созданием нового сообщения выполните поиск по существующим [issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 - Для вопросов и идей используйте [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions).
 - Сообщайте об уязвимостях конфиденциально в соответствии с [политикой безопасности](../../SECURITY.md).
-
-## Рост проекта
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Звёзды и загрузки выпусков Open CAD Studio" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## Поддержать проект
-
-Если Open CAD Studio помогает в вашей работе, поддержите дальнейшую разработку через [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) или [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## Лицензия
 

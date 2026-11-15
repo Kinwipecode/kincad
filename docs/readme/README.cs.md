@@ -36,7 +36,7 @@ Projekt je aktivně vyvíjen. Důležité produkční výkresy zálohujte a repr
 - **Vykreslování přes GPU** — akcelerované 2D a 3D pohledy pomocí `wgpu`, s ortografickou a perspektivní kamerou.
 - **Rozšiřitelné postupy** — nativní pluginy, příkazové skripty, bezobslužná konverze a řádkové JSON automatizační API.
 
-<p align="center"><img src="../../site/modeling.png" alt="3D model v Open CAD Studio" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Práce se soubory
 
@@ -176,20 +176,6 @@ Vítáme hlášení chyb, cílené pull requesty, překlady, vylepšení dokumen
 - Před otevřením nového hlášení prohledejte existující [issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 - Pro otázky a nápady použijte [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions).
 - Zranitelnosti hlaste soukromě podle [bezpečnostních zásad](../../SECURITY.md).
-
-## Růst projektu
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Hvězdy a stažení Open CAD Studio" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## Podpořte projekt
-
-Pokud vám Open CAD Studio pomáhá, podpořte další vývoj přes [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) nebo [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## Licence
 

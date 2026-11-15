@@ -36,7 +36,7 @@ Open CAD Studio 是一款用于技术绘图、布局设计和实体建模的跨�
 - **GPU 渲染** — 通过 `wgpu` 加速二维和三维视口，并支持正交与透视相机。
 - **可扩展工作流** — 支持原生插件、命令脚本、无界面转换和逐行 JSON 自动化 API。
 
-<p align="center"><img src="../../site/modeling.png" alt="Open CAD Studio 中的三维模型" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## 文件工作流
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - 提交新报告前请搜索现有 [issues](https://github.com/HakanSeven12/OpenCADStudio/issues)。
 - 问题和想法请使用 [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions)。
 - 请按照[安全策略](../../SECURITY.md)私下报告漏洞。
-
-## 项目成长
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio 星标和版本下载量" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## 支持项目
-
-如果 Open CAD Studio 对您的工作有所帮助，请通过 [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) 或 [Patreon](https://www.patreon.com/HakanSeven12) 支持持续开发。
 
 ## 许可证
 

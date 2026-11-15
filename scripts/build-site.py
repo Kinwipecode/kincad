@@ -56,6 +56,9 @@ def build(output):
     logo = asset(ROOT / "assets/logo.svg")
     workspace = asset(ROOT / "site/workspace.png")
     modeling = asset(ROOT / "site/modeling.png")
+    dwg_version = asset(ROOT / "site/dwg-version.png")
+    recipe = asset(ROOT / "site/recipe.png")
+    batch = asset(ROOT / "site/batch.png")
     shutil.copyfile(ROOT / "assets/logo.svg", output / "assets/logo.svg")
     for filename in ("favicon.ico", "favicon.svg", "favicon.png"):
         shutil.copyfile(ROOT / "site" / filename, output / filename)
@@ -103,6 +106,7 @@ def build(output):
         values.update(locale=locale, direction="rtl" if locale == "ar-SA" else "ltr",
                       path=path, url=BASE + path, og_locale=locale.replace("-", "_"),
                       logo=logo, workspace=workspace, modeling=modeling, icons=icons,
+                      dwg_version=dwg_version, recipe=recipe, batch=batch,
                       prefix=PREFIX, origin=BASE,
                       css_version=css_version, js_version=js_version, alternates=alternates,
                       languages=escape(messages["languages"].format(count=len(catalogs))),

@@ -36,7 +36,7 @@ Projektia kehitetään aktiivisesti. Säilytä tärkeistä tuotantopiirustuksist
 - **GPU-renderöinti** — `wgpu`:n kiihdyttämät 2D- ja 3D-näkymät sekä ortografiset ja perspektiivikamerat.
 - **Laajennettavat työnkulut** — natiiviliitännäiset, komentoskriptit, käyttöliittymätön muunnos ja rivipohjainen JSON-automaatiorajapinta.
 
-<p align="center"><img src="../../site/modeling.png" alt="3D-malli Open CAD Studiossa" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Tiedostotyönkulut
 
@@ -176,20 +176,6 @@ Virheraportit, rajatut pull requestit, käännökset, dokumentaatioparannukset j
 - Etsi olemassa olevista [issueista](https://github.com/HakanSeven12/OpenCADStudio/issues) ennen uuden raportin avaamista.
 - Käytä [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions)-osiota kysymyksiin ja ideoihin.
 - Ilmoita haavoittuvuuksista yksityisesti [tietoturvakäytännön](../../SECURITY.md) mukaisesti.
-
-## Projektin kasvu
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studion tähdet ja julkaisulataukset" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## Tue projektia
-
-Jos Open CAD Studio auttaa työssäsi, tue jatkokehitystä [GitHub Sponsorsin](https://github.com/sponsors/HakanSeven12) tai [Patreonin](https://www.patreon.com/HakanSeven12) kautta.
 
 ## Lisenssi
 

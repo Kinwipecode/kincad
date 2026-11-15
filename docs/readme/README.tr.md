@@ -38,7 +38,7 @@ Proje aktif olarak geliştirilmektedir. Önemli üretim çizimlerinin yedeklerin
 - **GPU ile görüntüleme** — `wgpu` üzerinden hızlandırılmış 2B ve 3B görünüm pencereleri; ortografik ve perspektif kameralar.
 - **Genişletilebilir iş akışları** — yerel eklentiler, komut betikleri, arayüzsüz dönüştürme ve satır tabanlı JSON otomasyon API'si.
 
-<p align="center"><img src="../../site/modeling.png" alt="Open CAD Studio içinde 3B model" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Dosya iş akışları
 
@@ -178,20 +178,6 @@ Hata bildirimleri, odaklı pull request'ler, çeviriler, belge iyileştirmeleri 
 - Yeni bildirim açmadan önce mevcut [issue'larda](https://github.com/HakanSeven12/OpenCADStudio/issues) arama yapın.
 - Sorular ve fikirler için [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) bölümünü kullanın.
 - Güvenlik açıklarını [güvenlik politikasını](../../SECURITY.md) izleyerek özel olarak bildirin.
-
-## Proje büyümesi
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio yıldızları ve sürüm indirmeleri" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## Projeyi destekleyin
-
-Open CAD Studio işinize yardımcı oluyorsa geliştirmeyi [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) veya [Patreon](https://www.patreon.com/HakanSeven12) üzerinden destekleyin.
 
 ## Lisans
 

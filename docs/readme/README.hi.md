@@ -36,7 +36,7 @@ Open CAD Studio तकनीकी ड्राइंग, लेआउट का
 - **GPU रेंडरिंग** — `wgpu` से तेज़ किए गए 2D और 3D व्यूपोर्ट, ऑर्थोग्राफ़िक और पर्सपेक्टिव कैमरा सहित।
 - **विस्तार योग्य कार्यप्रवाह** — मूल प्लगइन, कमांड स्क्रिप्ट, हेडलेस रूपांतरण और पंक्ति-आधारित JSON स्वचालन API।
 
-<p align="center"><img src="../../site/modeling.png" alt="Open CAD Studio में 3D मॉडल" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## फ़ाइल कार्यप्रवाह
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - नई रिपोर्ट खोलने से पहले मौजूदा [issues](https://github.com/HakanSeven12/OpenCADStudio/issues) खोजें।
 - प्रश्नों और विचारों के लिए [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) उपयोग करें।
 - [सुरक्षा नीति](../../SECURITY.md) के अनुसार कमजोरियों की निजी रूप से रिपोर्ट करें।
-
-## परियोजना की वृद्धि
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio स्टार और रिलीज़ डाउनलोड" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## परियोजना का समर्थन करें
-
-यदि Open CAD Studio आपके काम में सहायक है, तो [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) या [Patreon](https://www.patreon.com/HakanSeven12) के माध्यम से इसके निरंतर विकास का समर्थन करें।
 
 ## लाइसेंस
 

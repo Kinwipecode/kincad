@@ -159,6 +159,9 @@ h2 { margin-bottom: 20px; font-size: clamp(32px, 3.2vw, 48px); line-height: 1.12
 .format-list span { color: var(--muted); font-size: .875rem; }
 
 .growth-section { border-bottom: 1px solid var(--line); background: #0e151d; }
+.converter-lead { max-width: 780px; margin: 0 0 28px; color: var(--muted); font-size: 17px; line-height: 1.7; }
+.converter-section .section-heading { margin-bottom: 18px; }
+.converter-section .growth-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .growth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .growth-card { width: 100%; margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
 .growth-card > a { display: block; }

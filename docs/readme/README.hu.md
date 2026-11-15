@@ -36,7 +36,7 @@ A projekt aktív fejlesztés alatt áll. A fontos gyártási rajzokról tarts bi
 - **GPU-megjelenítés** — `wgpu` által gyorsított 2D és 3D nézetek, ortografikus és perspektivikus kamerákkal.
 - **Bővíthető munkafolyamatok** — natív bővítmények, parancsfájlok, felület nélküli konverzió és soralapú JSON automatizálási API.
 
-<p align="center"><img src="../../site/modeling.png" alt="3D modell az Open CAD Studióban" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Fájlmunkafolyamatok
 
@@ -176,20 +176,6 @@ Hibajelentéseket, célzott pull requesteket, fordításokat, dokumentációfejl
 - Új jelentés előtt keress a meglévő [issue-k](https://github.com/HakanSeven12/OpenCADStudio/issues) között.
 - Kérdésekhez és ötletekhez használd a [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) oldalt.
 - A sérülékenységeket a [biztonsági szabályzat](../../SECURITY.md) szerint, bizalmasan jelentsd.
-
-## A projekt növekedése
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio csillagok és kiadásletöltések" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## A projekt támogatása
-
-Ha az Open CAD Studio segíti a munkádat, támogasd a további fejlesztést a [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) vagy a [Patreon](https://www.patreon.com/HakanSeven12) oldalán.
 
 ## Licenc
 

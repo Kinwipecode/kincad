@@ -36,7 +36,7 @@ Open CAD Studio 是用於技術繪圖、配置作業和實體建模的跨平台�
 - **GPU 轉譯** — 透過 `wgpu` 加速二維和三維視埠，並支援正投影與透視相機。
 - **可擴充工作流程** — 支援原生外掛程式、指令碼、無介面轉換和逐行 JSON 自動化 API。
 
-<p align="center"><img src="../../site/modeling.png" alt="Open CAD Studio 中的三維模型" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## 檔案工作流程
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - 建立新報告前請搜尋現有 [issues](https://github.com/HakanSeven12/OpenCADStudio/issues)。
 - 問題和想法請使用 [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions)。
 - 請依照[安全性政策](../../SECURITY.md)私下回報弱點。
-
-## 專案成長
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio 星號與版本下載量" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## 支持專案
-
-如果 Open CAD Studio 對您的工作有幫助，請透過 [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) 或 [Patreon](https://www.patreon.com/HakanSeven12) 支持持續開發。
 
 ## 授權
 

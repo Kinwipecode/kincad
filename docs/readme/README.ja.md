@@ -36,7 +36,7 @@ Open CAD Studio は、技術製図、レイアウト作業、ソリッドモデ�
 - **GPU レンダリング** — `wgpu` による高速な 2D/3D ビューポートと、正投影・透視投影カメラ。
 - **拡張可能なワークフロー** — ネイティブプラグイン、コマンドスクリプト、ヘッドレス変換、行単位の JSON 自動化 API。
 
-<p align="center"><img src="../../site/modeling.png" alt="Open CAD Studio の 3D モデル" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## ファイルワークフロー
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - 新しい報告を作成する前に既存の [issues](https://github.com/HakanSeven12/OpenCADStudio/issues) を検索してください。
 - 質問やアイデアには [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) を利用してください。
 - 脆弱性は [セキュリティポリシー](../../SECURITY.md) に従って非公開で報告してください。
-
-## プロジェクトの成長
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio のスター数とリリースダウンロード数" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## プロジェクトを支援
-
-Open CAD Studio が作業に役立つ場合は、[GitHub Sponsors](https://github.com/sponsors/HakanSeven12) または [Patreon](https://www.patreon.com/HakanSeven12) で継続的な開発をご支援ください。
 
 ## ライセンス
 

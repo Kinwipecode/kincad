@@ -36,7 +36,7 @@ Open CAD Studio는 기술 도면 작성, 배치 작업, 솔리드 모델링을 �
 - **GPU 렌더링** — `wgpu`로 가속된 2D 및 3D 뷰포트와 직교·원근 카메라를 제공합니다.
 - **확장 가능한 작업 흐름** — 네이티브 플러그인, 명령 스크립트, 헤드리스 변환, 줄 단위 JSON 자동화 API를 지원합니다.
 
-<p align="center"><img src="../../site/modeling.png" alt="Open CAD Studio의 3D 모델" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## 파일 작업 흐름
 
@@ -176,20 +176,6 @@ OpenCADStudio --mcp
 - 새 보고서를 열기 전에 기존 [issues](https://github.com/HakanSeven12/OpenCADStudio/issues)를 검색하세요.
 - 질문과 아이디어는 [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions)를 이용하세요.
 - 취약점은 [보안 정책](../../SECURITY.md)에 따라 비공개로 보고하세요.
-
-## 프로젝트 성장
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Open CAD Studio 스타 및 릴리스 다운로드" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## 프로젝트 후원
-
-Open CAD Studio가 업무에 도움이 된다면 [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) 또는 [Patreon](https://www.patreon.com/HakanSeven12)을 통해 지속적인 개발을 후원해 주세요.
 
 ## 라이선스
 

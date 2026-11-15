@@ -36,7 +36,7 @@ Le projet est en développement actif. Conservez des sauvegardes des dessins de 
 - **Rendu GPU** — vues 2D et 3D accélérées par `wgpu`, avec caméras orthographique et perspective.
 - **Flux extensibles** — plugins natifs, scripts de commandes, conversion sans interface et API d’automatisation JSON ligne par ligne.
 
-<p align="center"><img src="../../site/modeling.png" alt="Modèle 3D dans Open CAD Studio" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Flux de fichiers
 
@@ -176,20 +176,6 @@ Les rapports de bogues, pull requests ciblées, traductions, améliorations de d
 - Recherchez dans les [issues](https://github.com/HakanSeven12/OpenCADStudio/issues) existantes avant d’ouvrir un nouveau rapport.
 - Utilisez les [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) pour les questions et les idées.
 - Signalez les vulnérabilités en privé en suivant la [politique de sécurité](../../SECURITY.md).
-
-## Croissance du projet
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Étoiles et téléchargements d’Open CAD Studio" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## Soutenir le projet
-
-Si Open CAD Studio vous aide dans votre travail, soutenez son développement via [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) ou [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## Licence
 

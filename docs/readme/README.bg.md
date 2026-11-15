@@ -38,7 +38,7 @@ Open CAD Studio е междуплатформено приложение за т
 - **GPU визуализация** — ускорени 2D и 3D изгледи чрез `wgpu`, с ортографски и перспективни камери.
 - **Разширяеми работни процеси** — локални приставки, командни скриптове, преобразуване без графичен интерфейс и редово ориентиран JSON API за автоматизация.
 
-<p align="center"><img src="../../site/modeling.png" alt="3D модел в Open CAD Studio" width="100%"></p>
+<p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
 
 ## Работа с файлове
 
@@ -178,20 +178,6 @@ OpenCADStudio --mcp
 - Потърсете в съществуващите [issues](https://github.com/HakanSeven12/OpenCADStudio/issues), преди да отворите нов доклад.
 - Използвайте [Discussions](https://github.com/HakanSeven12/OpenCADStudio/discussions) за въпроси и идеи.
 - Докладвайте уязвимости поверително, като следвате [политиката за сигурност](../../SECURITY.md).
-
-## Развитие на проекта
-
-<a href="https://github.com/HakanSeven12/OpenCADStudio/stargazers">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.opencadstudio.com/star-history-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.opencadstudio.com/star-history-light.svg">
-    <img alt="Звезди и изтегляния на Open CAD Studio" src="https://www.opencadstudio.com/star-history-light.svg">
-  </picture>
-</a>
-
-## Подкрепете проекта
-
-Ако Open CAD Studio ви помага в работата, подкрепете по-нататъшното развитие чрез [GitHub Sponsors](https://github.com/sponsors/HakanSeven12) или [Patreon](https://www.patreon.com/HakanSeven12).
 
 ## Лиценз
 
