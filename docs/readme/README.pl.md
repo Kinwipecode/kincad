@@ -25,37 +25,7 @@ Open CAD Studio to wieloplatformowa aplikacja do rysunku technicznego, pracy z u
 
 Projekt jest aktywnie rozwijany. Zachowuj kopie zapasowe ważnych rysunków produkcyjnych, a powtarzalne problemy zgłaszaj przez [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Najważniejsze funkcje
-
-- **Natywna praca z rysunkiem** — otwieranie, edycja, odzyskiwanie i zapis plików DWG oraz DXF bez usługi konwersji.
-- **Precyzyjne rysowanie 2D** — linie, polilinie, krzywe, splajny, kreskowania, przyciąganie do obiektów, śledzenie, warstwy, bloki i odnośniki zewnętrzne.
-- **Narzędzia dokumentacji** — tekst, wymiary, odnośniki, tolerancje, tabele, obszar modelu, obszar papieru, rzutnie i style wydruku.
-- **Modelowanie 3D oparte na jądrze** — prymitywy bryłowe, wyciąganie, obrót, przeciągnięcie, loft, operacje logiczne i teselacja elementów ACIS.
-- **Renderowanie GPU** — przyspieszone widoki 2D i 3D przez `wgpu`, z kamerą ortograficzną i perspektywiczną.
-- **Rozszerzalne przepływy pracy** — natywne wtyczki, skrypty poleceń, konwersja bez interfejsu i wierszowe API automatyzacji JSON.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Przepływy plików
-
-| Format lub przepływ | Obsługa |
-| --- | --- |
-| DWG | Odczyt i zapis; wersjonowane cele zapisu od R14 do 2018 |
-| DXF | Odczyt i zapis; wersjonowane cele zapisu od R14 do 2018 |
-| BAK / SV$ | Otwieranie kopii zapasowych i plików autozapisu |
-| OBJ | Import siatek wielokątów |
-| LandXML | Import punktów pomiarowych `CgPoint` |
-| STL | Eksport danych siatki 3D |
-| STEP AP203 | Eksport danych siatki 3D |
-| PDF | Drukowanie układów i wybranej geometrii w wersji komputerowej |
-| CSV | Wyodrębnianie danych właściwości elementów |
-| CTB / STB | Wczytywanie i edycja tabel stylów wydruku |
-
-## Komputer czy przeglądarka
-
-Użyj [aplikacji webowej](https://www.opencadstudio.com), aby rozpocząć bez instalacji. Rysunki wybiera się w przeglądarce i zapisuje jako lokalne pliki do pobrania.
-
-Użyj aplikacji komputerowej do natywnych skojarzeń plików, miniatur w menedżerze plików, drukowania systemowego, wyjścia PDF, zewnętrznych wtyczek, skryptów poleceń i automatyzacji bez interfejsu. Wydania są dostępne dla Windows, Linux i macOS na Apple Silicon.
 
 ## Instalacja
 

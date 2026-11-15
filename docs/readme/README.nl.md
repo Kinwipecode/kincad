@@ -25,37 +25,7 @@ Open CAD Studio is een platformonafhankelijke toepassing voor technisch tekenen,
 
 Het project wordt actief ontwikkeld. Bewaar reservekopieën van belangrijke productietekeningen en meld reproduceerbare problemen via [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Hoogtepunten
-
-- **Native tekenworkflow** — DWG- en DXF-bestanden openen, bewerken, herstellen en opslaan zonder conversiedienst.
-- **Nauwkeurig 2D-tekenen** — lijnen, polylijnen, krommen, splines, arceringen, object-snaps, tracking, lagen, blokken en externe referenties.
-- **Documentatiegereedschap** — tekst, maatvoering, verwijslijnen, toleranties, tabellen, modelruimte, papierruimte, viewports en plotstijlen.
-- **Kernelgestuurd 3D-modelleren** — solid-primitieven, extrusie, omwenteling, sweep, loft, Booleaanse bewerkingen en tessellatie van ACIS-entiteiten.
-- **GPU-rendering** — versnelde 2D- en 3D-viewports via `wgpu`, met orthografische en perspectiefcamera's.
-- **Uitbreidbare workflows** — native plug-ins, opdrachtscripts, headless conversie en een regelgebaseerde JSON-automatiserings-API.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Bestandsworkflows
-
-| Formaat of workflow | Ondersteuning |
-| --- | --- |
-| DWG | Lezen en schrijven; opslagdoelen van R14 tot en met 2018 |
-| DXF | Lezen en schrijven; opslagdoelen van R14 tot en met 2018 |
-| BAK / SV$ | Back-ups en automatisch opgeslagen tekeningen openen |
-| OBJ | Polygonale meshes importeren |
-| LandXML | `CgPoint`-meetpunten importeren |
-| STL | 3D-meshgegevens exporteren |
-| STEP AP203 | 3D-meshgegevens exporteren |
-| PDF | Lay-outs en geselecteerde geometrie plotten op desktop |
-| CSV | Eigenschapsgegevens van entiteiten extraheren |
-| CTB / STB | Plotstijltabellen laden en bewerken |
-
-## Desktop of web
-
-Gebruik de [webapp](https://www.opencadstudio.com) voor directe toegang zonder installatie. Tekeningen worden via de browser geselecteerd en als lokale downloads opgeslagen.
-
-Gebruik de desktoptoepassing voor native bestandskoppelingen, miniaturen in bestandsbeheer, systeemafdrukken, PDF-uitvoer, externe plug-ins, opdrachtscripts en headless automatisering. Uitgaven zijn beschikbaar voor Windows, Linux en Apple Silicon macOS.
 
 ## Installatie
 

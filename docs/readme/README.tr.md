@@ -27,37 +27,7 @@ Open CAD Studio; teknik çizim, pafta düzenleme ve katı modelleme için platfo
 
 Proje aktif olarak geliştirilmektedir. Önemli üretim çizimlerinin yedeklerini saklayın ve tekrarlanabilir sorunları [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues) üzerinden bildirin.
 
-## Öne çıkanlar
-
-- **Doğrudan çizim iş akışı** — dönüştürme hizmeti olmadan DWG ve DXF dosyalarını açın, düzenleyin, kurtarın ve kaydedin.
-- **Hassas 2B çizim** — çizgiler, çoklu çizgiler, eğriler, spline'lar, taramalar, nesne yakalama, izleme, katmanlar, bloklar ve dış referanslar.
-- **Belgelendirme araçları** — metin, ölçülendirme, kılavuzlar, toleranslar, tablolar, model alanı, kağıt alanı, görünüm pencereleri ve çizim stilleri.
-- **Çekirdek destekli 3B modelleme** — katı temel şekiller, ekstrüzyon, döndürme, süpürme, loft, Boolean işlemleri ve ACIS varlık mozaiklemesi.
-- **GPU ile görüntüleme** — `wgpu` üzerinden hızlandırılmış 2B ve 3B görünüm pencereleri; ortografik ve perspektif kameralar.
-- **Genişletilebilir iş akışları** — yerel eklentiler, komut betikleri, arayüzsüz dönüştürme ve satır tabanlı JSON otomasyon API'si.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Dosya iş akışları
-
-| Biçim veya iş akışı | Destek |
-| --- | --- |
-| DWG | Okuma ve yazma; R14 ile 2018 arasında sürümlü kaydetme hedefleri |
-| DXF | Okuma ve yazma; R14 ile 2018 arasında sürümlü kaydetme hedefleri |
-| BAK / SV$ | Çizim yedeklerini ve otomatik kayıt dosyalarını açma |
-| OBJ | Çokgen ağlarını içe aktarma |
-| LandXML | `CgPoint` ölçüm noktalarını içe aktarma |
-| STL | 3B ağ verilerini dışa aktarma |
-| STEP AP203 | 3B ağ verilerini dışa aktarma |
-| PDF | Masaüstünde paftaları ve seçili geometrileri çizdirme |
-| CSV | Varlık özellik verilerini çıkarma |
-| CTB / STB | Çizim stili tablolarını yükleme ve düzenleme |
-
-## Masaüstü mü, web mi?
-
-Kurulum yapmadan hemen başlamak için [web uygulamasını](https://www.opencadstudio.com) kullanın. Çizimler tarayıcı üzerinden seçilir ve yerel indirme olarak kaydedilir.
-
-Yerel dosya ilişkilendirmeleri, dosya yöneticisi küçük resimleri, sistem yazdırması, PDF çıktısı, harici eklentiler, komut betikleri ve arayüzsüz otomasyon için masaüstü uygulamasını kullanın. Windows, Linux ve Apple Silicon macOS için sürüm derlemeleri sunulur.
 
 ## Kurulum
 

@@ -25,37 +25,7 @@ Az Open CAD Studio többplatformos alkalmazás műszaki rajzoláshoz, elrendezé
 
 A projekt aktív fejlesztés alatt áll. A fontos gyártási rajzokról tarts biztonsági másolatot, a reprodukálható hibákat pedig jelentsd a [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues) oldalon.
 
-## Főbb jellemzők
-
-- **Natív rajzi munkafolyamat** — DWG- és DXF-fájlok megnyitása, szerkesztése, helyreállítása és mentése átalakító szolgáltatás nélkül.
-- **Pontos 2D rajzolás** — vonalak, vonalláncok, görbék, spline-ok, sraffozások, tárgyraszterek, követés, rétegek, blokkok és külső referenciák.
-- **Dokumentációs eszközök** — szöveg, méretezés, mutatóvonalak, tűrések, táblázatok, modelltér, papírtér, nézetablakok és nyomtatási stílusok.
-- **Kernelalapú 3D modellezés** — testprimitívek, kihúzás, forgatás, söprés, loft, logikai műveletek és ACIS-entitások tesszellációja.
-- **GPU-megjelenítés** — `wgpu` által gyorsított 2D és 3D nézetek, ortografikus és perspektivikus kamerákkal.
-- **Bővíthető munkafolyamatok** — natív bővítmények, parancsfájlok, felület nélküli konverzió és soralapú JSON automatizálási API.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Fájlmunkafolyamatok
-
-| Formátum vagy munkafolyamat | Támogatás |
-| --- | --- |
-| DWG | Olvasás és írás; verziózott mentési célok R14-től 2018-ig |
-| DXF | Olvasás és írás; verziózott mentési célok R14-től 2018-ig |
-| BAK / SV$ | Rajzi biztonsági másolatok és automatikus mentések megnyitása |
-| OBJ | Poligonhálók importálása |
-| LandXML | `CgPoint` felmérési pontok importálása |
-| STL | 3D hálóadatok exportálása |
-| STEP AP203 | 3D hálóadatok exportálása |
-| PDF | Elrendezések és kijelölt geometria nyomtatása asztali gépen |
-| CSV | Entitástulajdonságok adatainak kinyerése |
-| CTB / STB | Nyomtatásistílus-táblák betöltése és szerkesztése |
-
-## Asztali vagy webes változat
-
-Használd a [webalkalmazást](https://www.opencadstudio.com) azonnali, telepítés nélküli hozzáféréshez. A rajzok a böngészőben választhatók ki és helyi letöltésként menthetők.
-
-Az asztali alkalmazást válaszd natív fájltársításokhoz, fájlkezelői bélyegképekhez, rendszernyomtatáshoz, PDF-kimenethez, külső bővítményekhez, parancsfájlokhoz és felület nélküli automatizáláshoz. Windows, Linux és Apple Silicon macOS rendszerhez érhetők el kiadások.
 
 ## Telepítés
 

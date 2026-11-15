@@ -80,15 +80,6 @@ Open CAD Studio is a cross-platform application for technical drawing, layout wo
 
 The project is under active development. Keep backups of important production drawings and report reproducible problems through [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Highlights
-
-- **Native drawing workflow** — open, edit, recover, and save DWG and DXF files without a conversion service.
-- **Precise 2D drafting** — lines, polylines, curves, splines, hatches, object snaps, tracking, layers, blocks, and external references.
-- **Documentation tools** — text, dimensions, leaders, tolerances, tables, model space, paper space, viewports, and plot styles.
-- **Kernel-backed 3D modeling** — solid primitives, extrusion, revolution, sweep, loft, Boolean operations, and ACIS entity tessellation.
-- **GPU rendering** — accelerated 2D and 3D viewports through `wgpu`, with orthographic and perspective cameras.
-- **Extensible workflows** — native plugins, command scripts, headless conversion, and a line-based JSON automation API.
-
 <p align="center">
   <img src="site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%">
 </p>
@@ -108,27 +99,6 @@ Hier bieten wir die Kompatibilität mit verschiedenen DWG-Formaten. Im Programm 
 <p align="center">
   <img src="site/batch.png" alt="Dialog „Stapelbereinigung der Pläne“: mehrere Zeichnungen nach einem Rezept bereinigen und speichern" width="75%">
 </p>
-
-## File workflows
-
-| Format or workflow | Support |
-| --- | --- |
-| DWG | Read and write; versioned save targets from R14 through 2018 |
-| DXF | Read and write; versioned save targets from R14 through 2018 |
-| BAK / SV$ | Open drawing backups and autosave files |
-| OBJ | Import polygon meshes |
-| LandXML | Import `CgPoint` survey points |
-| STL | Export 3D mesh data |
-| STEP AP203 | Export 3D mesh data |
-| PDF | Plot layouts and selected geometry on desktop |
-| CSV | Extract entity property data |
-| CTB / STB | Load and edit plot style tables |
-
-## Desktop or web
-
-Use the [web app](https://www.opencadstudio.com) for immediate access with no installation. Drawings are selected through the browser and saved as local downloads.
-
-Use the desktop application for native file associations, file-manager thumbnails, system printing, PDF output, external plugins, command scripts, and headless automation. Release builds are available for Windows, Linux, and Apple Silicon macOS.
 
 ## Install
 

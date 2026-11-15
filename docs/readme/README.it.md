@@ -25,37 +25,7 @@ Open CAD Studio è un’applicazione multipiattaforma per disegno tecnico, impag
 
 Il progetto è in sviluppo attivo. Conserva copie di sicurezza dei disegni di produzione importanti e segnala i problemi riproducibili tramite [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Funzionalità principali
-
-- **Flusso di disegno nativo** — apri, modifica, recupera e salva file DWG e DXF senza servizi di conversione.
-- **Disegno 2D preciso** — linee, polilinee, curve, spline, tratteggi, snap a oggetto, tracciamento, layer, blocchi e riferimenti esterni.
-- **Strumenti di documentazione** — testo, quote, direttrici, tolleranze, tabelle, spazio modello, spazio carta, finestre e stili di stampa.
-- **Modellazione 3D basata su kernel** — primitive solide, estrusione, rivoluzione, sweep, loft, operazioni booleane e tassellazione di entità ACIS.
-- **Rendering GPU** — viste 2D e 3D accelerate tramite `wgpu`, con telecamere ortografiche e prospettiche.
-- **Flussi estensibili** — plugin nativi, script di comandi, conversione headless e API di automazione JSON basata su righe.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Flussi dei file
-
-| Formato o flusso | Supporto |
-| --- | --- |
-| DWG | Lettura e scrittura; destinazioni di salvataggio versionate da R14 a 2018 |
-| DXF | Lettura e scrittura; destinazioni di salvataggio versionate da R14 a 2018 |
-| BAK / SV$ | Apertura di backup e file di salvataggio automatico |
-| OBJ | Importazione di mesh poligonali |
-| LandXML | Importazione di punti di rilievo `CgPoint` |
-| STL | Esportazione di dati mesh 3D |
-| STEP AP203 | Esportazione di dati mesh 3D |
-| PDF | Stampa di layout e geometria selezionata sul desktop |
-| CSV | Estrazione dei dati delle proprietà delle entità |
-| CTB / STB | Caricamento e modifica delle tabelle degli stili di stampa |
-
-## Desktop o web
-
-Usa l’[app web](https://www.opencadstudio.com) per l’accesso immediato senza installazione. I disegni vengono selezionati nel browser e salvati come download locali.
-
-Usa l’applicazione desktop per associazioni file native, anteprime nel gestore file, stampa di sistema, output PDF, plugin esterni, script di comandi e automazione headless. Sono disponibili build per Windows, Linux e macOS Apple Silicon.
 
 ## Installazione
 

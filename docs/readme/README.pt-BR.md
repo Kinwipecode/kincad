@@ -25,37 +25,7 @@ Open CAD Studio é um aplicativo multiplataforma para desenho técnico, trabalho
 
 O projeto está em desenvolvimento ativo. Mantenha cópias de segurança de desenhos de produção importantes e relate problemas reproduzíveis pelo [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Destaques
-
-- **Fluxo de desenho nativo** — abra, edite, recupere e salve arquivos DWG e DXF sem serviço de conversão.
-- **Desenho 2D preciso** — linhas, polilinhas, curvas, splines, hachuras, snaps a objetos, rastreamento, camadas, blocos e referências externas.
-- **Ferramentas de documentação** — texto, cotas, chamadas, tolerâncias, tabelas, espaço do modelo, espaço do papel, viewports e estilos de plotagem.
-- **Modelagem 3D com kernel** — primitivas sólidas, extrusão, revolução, varredura, loft, operações booleanas e tesselação de entidades ACIS.
-- **Renderização por GPU** — viewports 2D e 3D aceleradas por `wgpu`, com câmeras ortográfica e em perspectiva.
-- **Fluxos extensíveis** — plugins nativos, scripts de comandos, conversão sem interface e API de automação JSON baseada em linhas.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Fluxos de arquivos
-
-| Formato ou fluxo | Suporte |
-| --- | --- |
-| DWG | Leitura e gravação; destinos de salvamento versionados de R14 a 2018 |
-| DXF | Leitura e gravação; destinos de salvamento versionados de R14 a 2018 |
-| BAK / SV$ | Abertura de backups e arquivos de salvamento automático |
-| OBJ | Importação de malhas poligonais |
-| LandXML | Importação de pontos topográficos `CgPoint` |
-| STL | Exportação de dados de malha 3D |
-| STEP AP203 | Exportação de dados de malha 3D |
-| PDF | Plotagem de layouts e geometria selecionada no desktop |
-| CSV | Extração de dados de propriedades das entidades |
-| CTB / STB | Carregamento e edição de tabelas de estilos de plotagem |
-
-## Desktop ou web
-
-Use o [aplicativo web](https://www.opencadstudio.com) para acesso imediato, sem instalação. Os desenhos são selecionados pelo navegador e salvos como downloads locais.
-
-Use o aplicativo desktop para associações nativas de arquivos, miniaturas no gerenciador de arquivos, impressão do sistema, saída em PDF, plugins externos, scripts de comandos e automação sem interface. Há versões para Windows, Linux e macOS com Apple Silicon.
 
 ## Instalação
 

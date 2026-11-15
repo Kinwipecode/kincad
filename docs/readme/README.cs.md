@@ -25,37 +25,7 @@ Open CAD Studio je multiplatformní aplikace pro technické kreslení, práci s 
 
 Projekt je aktivně vyvíjen. Důležité produkční výkresy zálohujte a reprodukovatelné problémy hlaste přes [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Hlavní funkce
-
-- **Nativní práce s výkresy** — otevírání, úpravy, obnova a ukládání DWG a DXF bez konverzní služby.
-- **Přesné 2D kreslení** — úsečky, křivky, spline, šrafy, uchopení objektů, trasování, hladiny, bloky a externí reference.
-- **Dokumentační nástroje** — text, kóty, odkazové čáry, tolerance, tabulky, modelový prostor, výkresový prostor, výřezy a styly vykreslování.
-- **3D modelování s geometrickým jádrem** — základní tělesa, vysunutí, rotace, tažení, loft, booleovské operace a teselace entit ACIS.
-- **Vykreslování přes GPU** — akcelerované 2D a 3D pohledy pomocí `wgpu`, s ortografickou a perspektivní kamerou.
-- **Rozšiřitelné postupy** — nativní pluginy, příkazové skripty, bezobslužná konverze a řádkové JSON automatizační API.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Práce se soubory
-
-| Formát nebo postup | Podpora |
-| --- | --- |
-| DWG | Čtení a zápis; cílové verze ukládání R14 až 2018 |
-| DXF | Čtení a zápis; cílové verze ukládání R14 až 2018 |
-| BAK / SV$ | Otevírání záloh a automaticky uložených výkresů |
-| OBJ | Import polygonových sítí |
-| LandXML | Import zaměřených bodů `CgPoint` |
-| STL | Export dat 3D sítí |
-| STEP AP203 | Export dat 3D sítí |
-| PDF | Vykreslení rozvržení a vybrané geometrie na počítači |
-| CSV | Extrakce vlastností entit |
-| CTB / STB | Načtení a úpravy tabulek stylů vykreslování |
-
-## Počítač nebo web
-
-Pro okamžitý přístup bez instalace použijte [webovou aplikaci](https://www.opencadstudio.com). Výkresy se vybírají v prohlížeči a ukládají jako místní soubory ke stažení.
-
-Desktopovou aplikaci použijte pro nativní asociace souborů, náhledy ve správci souborů, systémový tisk, výstup PDF, externí pluginy, příkazové skripty a bezobslužnou automatizaci. Vydání jsou dostupná pro Windows, Linux a macOS s Apple Silicon.
 
 ## Instalace
 

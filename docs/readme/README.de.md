@@ -25,37 +25,7 @@ Open CAD Studio ist eine plattformübergreifende Anwendung für technische Zeich
 
 Das Projekt wird aktiv entwickelt. Bewahre Sicherungskopien wichtiger Produktionszeichnungen auf und melde reproduzierbare Probleme über [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Höhepunkte
-
-- **Nativer Zeichnungsablauf** — DWG- und DXF-Dateien ohne Konvertierungsdienst öffnen, bearbeiten, wiederherstellen und speichern.
-- **Präzises 2D-Zeichnen** — Linien, Polylinien, Kurven, Splines, Schraffuren, Objektfang, Spurverfolgung, Layer, Blöcke und externe Referenzen.
-- **Dokumentationswerkzeuge** — Text, Bemaßungen, Führungslinien, Toleranzen, Tabellen, Modellbereich, Papierbereich, Ansichtsfenster und Plotstile.
-- **Kernel-gestützte 3D-Modellierung** — Volumenprimitive, Extrusion, Rotation, Sweep, Loft, boolesche Operationen und Tessellierung von ACIS-Elementen.
-- **GPU-Darstellung** — beschleunigte 2D- und 3D-Ansichten über `wgpu` mit orthografischen und perspektivischen Kameras.
-- **Erweiterbare Abläufe** — native Plugins, Befehlsskripte, Konvertierung ohne Oberfläche und zeilenbasierte JSON-Automatisierungs-API.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Dateiabläufe
-
-| Format oder Ablauf | Unterstützung |
-| --- | --- |
-| DWG | Lesen und Schreiben; versionierte Speicherziele von R14 bis 2018 |
-| DXF | Lesen und Schreiben; versionierte Speicherziele von R14 bis 2018 |
-| BAK / SV$ | Zeichnungssicherungen und automatisch gespeicherte Dateien öffnen |
-| OBJ | Polygonnetze importieren |
-| LandXML | `CgPoint`-Vermessungspunkte importieren |
-| STL | 3D-Netzdaten exportieren |
-| STEP AP203 | 3D-Netzdaten exportieren |
-| PDF | Layouts und ausgewählte Geometrie auf dem Desktop plotten |
-| CSV | Eigenschaftsdaten von Elementen extrahieren |
-| CTB / STB | Plotstiltabellen laden und bearbeiten |
-
-## Desktop oder Web
-
-Nutze die [Web-App](https://www.opencadstudio.com) für sofortigen Zugriff ohne Installation. Zeichnungen werden im Browser ausgewählt und als lokale Downloads gespeichert.
-
-Nutze die Desktop-Anwendung für native Dateizuordnungen, Vorschaubilder im Dateimanager, Systemdruck, PDF-Ausgabe, externe Plugins, Befehlsskripte und Automatisierung ohne Oberfläche. Veröffentlichungen sind für Windows, Linux und Apple-Silicon-macOS verfügbar.
 
 ## Installation
 

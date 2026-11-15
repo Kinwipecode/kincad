@@ -25,37 +25,7 @@ Open CAD Studio on monialustainen sovellus tekniseen piirtämiseen, asettelutyö
 
 Projektia kehitetään aktiivisesti. Säilytä tärkeistä tuotantopiirustuksista varmuuskopiot ja ilmoita toistettavista ongelmista [GitHub Issuesissa](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Kohokohdat
-
-- **Suora piirustusprosessi** — avaa, muokkaa, palauta ja tallenna DWG- ja DXF-tiedostoja ilman muunnospalvelua.
-- **Tarkka 2D-piirtäminen** — viivat, murtoviivat, käyrät, splinit, viivoitukset, objektikohdistukset, seuranta, tasot, lohkot ja ulkoiset viitteet.
-- **Dokumentointityökalut** — teksti, mitoitukset, johtoviivat, toleranssit, taulukot, mallitila, paperitila, näkymät ja tulostustyylit.
-- **Geometriaytimeen perustuva 3D-mallinnus** — solidiprimitiivit, pursotus, pyöräytys, pyyhkäisy, loft, Boolen operaatiot ja ACIS-kohteiden tessellointi.
-- **GPU-renderöinti** — `wgpu`:n kiihdyttämät 2D- ja 3D-näkymät sekä ortografiset ja perspektiivikamerat.
-- **Laajennettavat työnkulut** — natiiviliitännäiset, komentoskriptit, käyttöliittymätön muunnos ja rivipohjainen JSON-automaatiorajapinta.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Tiedostotyönkulut
-
-| Muoto tai työnkulku | Tuki |
-| --- | --- |
-| DWG | Luku ja kirjoitus; versioidut tallennuskohteet R14–2018 |
-| DXF | Luku ja kirjoitus; versioidut tallennuskohteet R14–2018 |
-| BAK / SV$ | Piirustusvarmuuskopioiden ja automaattitallennusten avaaminen |
-| OBJ | Monikulmioverkkojen tuonti |
-| LandXML | `CgPoint`-mittauspisteiden tuonti |
-| STL | 3D-verkkotietojen vienti |
-| STEP AP203 | 3D-verkkotietojen vienti |
-| PDF | Asettelujen ja valitun geometrian tulostus työpöytäversiossa |
-| CSV | Kohteiden ominaisuustietojen poiminta |
-| CTB / STB | Tulostustyylitaulukoiden lataus ja muokkaus |
-
-## Työpöytä vai verkko
-
-Käytä [verkkosovellusta](https://www.opencadstudio.com), kun haluat aloittaa heti ilman asennusta. Piirustukset valitaan selaimessa ja tallennetaan paikallisina latauksina.
-
-Käytä työpöytäsovellusta natiiveihin tiedostokytkentöihin, tiedostonhallinnan esikatseluihin, järjestelmätulostukseen, PDF-tulosteisiin, ulkoisiin liitännäisiin, komentoskripteihin ja käyttöliittymättömään automaatioon. Julkaisut ovat saatavilla Windowsille, Linuxille ja Apple Silicon macOS:lle.
 
 ## Asennus
 

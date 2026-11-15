@@ -25,37 +25,7 @@ Open CAD Studio es una aplicación multiplataforma para dibujo técnico, trabajo
 
 El proyecto está en desarrollo activo. Conserva copias de seguridad de los dibujos de producción importantes e informa de problemas reproducibles mediante [GitHub Issues](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Características destacadas
-
-- **Flujo de dibujo nativo** — abre, edita, recupera y guarda archivos DWG y DXF sin un servicio de conversión.
-- **Dibujo 2D preciso** — líneas, polilíneas, curvas, splines, sombreados, referencias a objetos, rastreo, capas, bloques y referencias externas.
-- **Herramientas de documentación** — texto, cotas, directrices, tolerancias, tablas, espacio modelo, espacio papel, ventanas gráficas y estilos de trazado.
-- **Modelado 3D respaldado por kernel** — primitivas sólidas, extrusión, revolución, barrido, loft, operaciones booleanas y teselación de entidades ACIS.
-- **Renderizado por GPU** — vistas 2D y 3D aceleradas mediante `wgpu`, con cámaras ortográfica y en perspectiva.
-- **Flujos ampliables** — complementos nativos, scripts de comandos, conversión sin interfaz y una API de automatización JSON basada en líneas.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Flujos de archivos
-
-| Formato o flujo | Compatibilidad |
-| --- | --- |
-| DWG | Lectura y escritura; destinos de guardado versionados de R14 a 2018 |
-| DXF | Lectura y escritura; destinos de guardado versionados de R14 a 2018 |
-| BAK / SV$ | Apertura de copias de seguridad y archivos de guardado automático |
-| OBJ | Importación de mallas poligonales |
-| LandXML | Importación de puntos topográficos `CgPoint` |
-| STL | Exportación de datos de malla 3D |
-| STEP AP203 | Exportación de datos de malla 3D |
-| PDF | Trazado de presentaciones y geometría seleccionada en escritorio |
-| CSV | Extracción de datos de propiedades de entidades |
-| CTB / STB | Carga y edición de tablas de estilos de trazado |
-
-## Escritorio o web
-
-Usa la [aplicación web](https://www.opencadstudio.com) para acceder de inmediato sin instalar nada. Los dibujos se seleccionan mediante el navegador y se guardan como descargas locales.
-
-Usa la aplicación de escritorio para asociaciones de archivos nativas, miniaturas del gestor de archivos, impresión del sistema, salida PDF, complementos externos, scripts de comandos y automatización sin interfaz. Hay versiones para Windows, Linux y macOS con Apple Silicon.
 
 ## Instalación
 

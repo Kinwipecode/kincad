@@ -25,37 +25,7 @@ Open CAD Studio est une application multiplateforme destinée au dessin techniqu
 
 Le projet est en développement actif. Conservez des sauvegardes des dessins de production importants et signalez les problèmes reproductibles dans les [issues GitHub](https://github.com/HakanSeven12/OpenCADStudio/issues).
 
-## Points forts
-
-- **Flux de dessin natif** — ouvrez, modifiez, récupérez et enregistrez les fichiers DWG et DXF sans service de conversion.
-- **Dessin 2D précis** — lignes, polylignes, courbes, splines, hachures, accrochages aux objets, repérage, calques, blocs et références externes.
-- **Outils de documentation** — texte, cotations, repères, tolérances, tableaux, espace objet, espace papier, fenêtres et styles de tracé.
-- **Modélisation 3D avec noyau géométrique** — primitives solides, extrusion, révolution, balayage, lissage, opérations booléennes et tessellation d’entités ACIS.
-- **Rendu GPU** — vues 2D et 3D accélérées par `wgpu`, avec caméras orthographique et perspective.
-- **Flux extensibles** — plugins natifs, scripts de commandes, conversion sans interface et API d’automatisation JSON ligne par ligne.
-
 <p align="center"><img src="../../site/modeling.png" alt="Kincad – deutsche Oberfläche" width="100%"></p>
-
-## Flux de fichiers
-
-| Format ou flux | Prise en charge |
-| --- | --- |
-| DWG | Lecture et écriture ; cibles d’enregistrement versionnées de R14 à 2018 |
-| DXF | Lecture et écriture ; cibles d’enregistrement versionnées de R14 à 2018 |
-| BAK / SV$ | Ouverture des sauvegardes et fichiers d’enregistrement automatique |
-| OBJ | Importation de maillages polygonaux |
-| LandXML | Importation de points topographiques `CgPoint` |
-| STL | Exportation de données de maillage 3D |
-| STEP AP203 | Exportation de données de maillage 3D |
-| PDF | Tracé des présentations et de la géométrie sélectionnée sur ordinateur |
-| CSV | Extraction des propriétés des entités |
-| CTB / STB | Chargement et modification des tables de styles de tracé |
-
-## Bureau ou web
-
-Utilisez l’[application web](https://www.opencadstudio.com) pour un accès immédiat sans installation. Les dessins sont sélectionnés dans le navigateur et enregistrés sous forme de téléchargements locaux.
-
-Utilisez l’application de bureau pour les associations de fichiers natives, les miniatures du gestionnaire de fichiers, l’impression système, la sortie PDF, les plugins externes, les scripts de commandes et l’automatisation sans interface. Des versions sont proposées pour Windows, Linux et macOS Apple Silicon.
 
 ## Installation
 
