@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.opencadstudio.com/sitemap.xml
+Sitemap: https://kinwipecode.github.io/kincad/sitemap.xml

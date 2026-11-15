@@ -10,21 +10,24 @@ from html import escape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = "https://www.opencadstudio.com"
-REPO = "https://github.com/HakanSeven12/OpenCADStudio"
+# GitHub Pages serves this repository as a project site under /kincad/.
+PREFIX = "/kincad"
+ORIGIN = "https://kinwipecode.github.io"
+BASE = ORIGIN
+REPO = "https://github.com/Kinwipecode/kincad"
 
 
 def locale_path(locale):
-    return f"/{locale}/"
+    return f"{PREFIX}/{locale}/"
 
 
 def public_path(locale):
-    return "/" if locale == "en-US" else locale_path(locale)
+    return f"{PREFIX}/" if locale == "en-US" else locale_path(locale)
 
 
 def load_catalogs():
     catalogs = {p.stem: json.loads(p.read_text()) for p in sorted((ROOT / "site/locales").glob("*.json"))}
-    supported = {p.parent.name for p in (ROOT / "locales").glob("*/opencadstudio.ftl")}
+    supported = {p.parent.name for p in (ROOT / "locales").glob("*/kincad.ftl")}
     if catalogs.keys() != supported:
         raise ValueError(f"Website locale mismatch: {catalogs.keys() ^ supported}")
     source = catalogs["en-US"]
@@ -46,9 +49,9 @@ def build(output):
 
     def asset(source):
         fingerprint = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
-        path = f"/assets/{source.stem}-{fingerprint}{source.suffix}"
-        shutil.copyfile(source, output / path.lstrip("/"))
-        return path
+        filename = f"{source.stem}-{fingerprint}{source.suffix}"
+        shutil.copyfile(source, output / "assets" / filename)
+        return f"{PREFIX}/assets/{filename}"
 
     logo = asset(ROOT / "assets/logo.svg")
     workspace = asset(ROOT / "site/workspace.png")
@@ -56,24 +59,26 @@ def build(output):
     shutil.copyfile(ROOT / "assets/logo.svg", output / "assets/logo.svg")
     for filename in ("favicon.ico", "favicon.svg", "favicon.png"):
         shutil.copyfile(ROOT / "site" / filename, output / filename)
-    icons = ('<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 96x96 256x256" />\n'
-             '<link rel="icon" href="/favicon.png" type="image/png" sizes="96x96" />\n'
-             '<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />\n'
-             '<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />')
+    icons = (f'<link rel="icon" href="{PREFIX}/favicon.ico" sizes="16x16 32x32 48x48 96x96 256x256" />\n'
+             f'<link rel="icon" href="{PREFIX}/favicon.png" type="image/png" sizes="96x96" />\n'
+             f'<link rel="icon" href="{PREFIX}/favicon.svg" type="image/svg+xml" sizes="any" />\n'
+             f'<link rel="apple-touch-icon" href="{PREFIX}/apple-touch-icon.png" sizes="180x180" />')
     manifest = json.loads((ROOT / "site/site.webmanifest").read_text())
-    manifest["icons"] = [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    manifest["icons"] = [{"src": f"{PREFIX}/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
     for size in (192, 512):
         manifest["icons"].append({"src": asset(ROOT / f"site/icon-{size}.png"), "sizes": f"{size}x{size}", "type": "image/png"})
     shutil.copyfile(ROOT / "site/apple-touch-icon.png", output / "apple-touch-icon.png")
     css_version = hashlib.sha256((ROOT / "site/site.css").read_bytes()).hexdigest()[:12]
     script = "const SITE_LOCALES = " + json.dumps(list(catalogs)) + ";\n" + (ROOT / "site/site.js").read_text()
     (output / "site.js").write_text(script, encoding="utf-8")
+    shutil.copyfile(ROOT / "site/site.css", output / "site.css")
+    shutil.copyfile(ROOT / "site/robots.txt", output / "robots.txt")
     js_version = hashlib.sha256(script.encode()).hexdigest()[:12]
     alternates = '\n'.join(f'<link rel="alternate" hreflang="{lang}" href="{BASE}{public_path(lang)}" />' for lang in catalogs)
-    alternates += f'\n<link rel="alternate" hreflang="x-default" href="{BASE}/" />'
+    alternates += f'\n<link rel="alternate" hreflang="x-default" href="{BASE}{PREFIX}/" />'
     for locale, messages in catalogs.items():
         path = public_path(locale)
-        destination = output / locale_path(locale).lstrip("/")
+        destination = output / locale
         destination.mkdir(parents=True, exist_ok=True)
         language_links = '\n'.join(
             f'<a href="{public_path(lang)}" lang="{lang}" hreflang="{lang}" dir="auto"'
@@ -82,22 +87,23 @@ def build(output):
         )
         schema = {
             "@context": "https://schema.org", "@type": "SoftwareApplication",
-            "name": "Open CAD Studio", "url": BASE + path, "inLanguage": locale,
+            "name": "Kincad", "url": BASE + path, "inLanguage": locale,
             "description": messages["description"], "applicationCategory": "DesignApplication",
             "operatingSystem": "Windows, Linux, macOS, Web", "isAccessibleForFree": True,
             "license": "https://www.gnu.org/licenses/gpl-3.0.html", "codeRepository": REPO,
-            "downloadUrl": REPO + "/releases/latest", "installUrl": BASE + "/app/",
+            "downloadUrl": REPO + "/releases/latest", "installUrl": BASE + PREFIX + "/app/",
             "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
         }
         website_schema = {
             "@context": "https://schema.org", "@type": "WebSite",
-            "name": "Open CAD Studio", "alternateName": ["OpenCADStudio", "opencadstudio.com"],
-            "url": BASE + "/",
+            "name": "Kincad", "alternateName": ["Kincad", "kincad"],
+            "url": BASE + PREFIX + "/",
         }
         values = {key: escape(value) for key, value in messages.items()}
         values.update(locale=locale, direction="rtl" if locale == "ar-SA" else "ltr",
                       path=path, url=BASE + path, og_locale=locale.replace("-", "_"),
                       logo=logo, workspace=workspace, modeling=modeling, icons=icons,
+                      prefix=PREFIX, origin=BASE,
                       css_version=css_version, js_version=js_version, alternates=alternates,
                       languages=escape(messages["languages"].format(count=len(catalogs))),
                       language_links=language_links,
@@ -108,7 +114,7 @@ def build(output):
         (destination / "index.html").write_text(rendered, encoding="utf-8")
         localized_manifest = {**manifest, "lang": locale, "dir": values["direction"],
                               "description": messages["description"], "start_url": path,
-                              "shortcuts": [{"name": messages["launch"], "url": "/app/"}]}
+                              "shortcuts": [{"name": messages["launch"], "url": PREFIX + "/app/"}]}
         (destination / "site.webmanifest").write_text(json.dumps(localized_manifest, ensure_ascii=False, indent=2) + '\n', encoding="utf-8")
     for filename in ("index.html", "site.webmanifest"):
         shutil.copyfile(output / "en-US" / filename, output / filename)

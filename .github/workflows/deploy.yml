@@ -1,0 +1,71 @@
+name: Deploy site to GitHub Pages
+
+# Baut die WASM-Web-App und die Landing-Page und veröffentlicht alles auf
+# GitHub Pages. Der Pfad "/kincad/" entspricht der Projektseite
+# https://kinwipecode.github.io/kincad/ (siehe scripts/build-site.py, PREFIX).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install trunk
+        uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+
+      - name: Read wasm-bindgen version
+        id: wasm-bindgen-version
+        shell: bash
+        run: |
+          VERSION=$(sed -n '/name = "wasm-bindgen"/{n;s/version = "\(.*\)"/\1/p;q;}' Cargo.lock)
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install wasm-bindgen CLI
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ steps.wasm-bindgen-version.outputs.version }}
+
+      - name: Build web app
+        run: trunk build --locked --release --public-url /kincad/app/ --dist dist/app --html-output index.html webapp/index.html
+
+      - name: Build landing page
+        run: python3 scripts/build-site.py dist
+
+      - name: Disable Jekyll
+        run: touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
